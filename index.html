@@ -14,7 +14,7 @@
   <!--
     ★ここだけ編集★
     下の GAS_BASE_URL を、あなたのGASウェブアプリの公開URLに置き換えてください。
-      例) https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycbwyz7sT_eujjqaa_H4GVoKiw-LYEgVuUqoE9x6-_mKEdHq72_T3qUVzV_rbeEZWKaWPig/exec
+      例) https://script.google.com/macros/s/XXXXXXXX/exec
 
     ■ イベントごとのリンクの発行方法
       このファイルのURLに ?event=イベントキー名 を付けるだけです。
@@ -32,7 +32,7 @@
   </iframe>
 
   <script>
-    var GAS_BASE_URL = 'https://script.google.com/macros/s/XXXXXXXX/exec';
+    var GAS_BASE_URL = 'https://script.google.com/macros/s/AKfycbwyz7sT_eujjqaa_H4GVoKiw-LYEgVuUqoE9x6-_mKEdHq72_T3qUVzV_rbeEZWKaWPig/exec';
     // このページの URL パラメータ（?event=event2 など）をそのまま GAS に転送する
     var params = window.location.search;
     document.getElementById('gasFrame').src = GAS_BASE_URL + (params || '');
