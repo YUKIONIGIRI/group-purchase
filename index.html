@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <base target="_top">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -381,6 +382,27 @@
   .lightbox img{max-width:100%;max-height:100%;border-radius:8px;box-shadow:0 12px 48px rgba(0,0,0,.5)}
   .lb-close{position:absolute;top:14px;right:16px;width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,.16);color:#fff;font-size:1.6rem;line-height:1;cursor:pointer}
   @media (prefers-reduced-motion:reduce){.panel{animation:none}}
+
+  /* ===== スマホ向けの使いやすさ改善 ===== */
+  /* iOSは入力欄のfont-sizeが16px未満だと、フォーカス時に画面を自動ズームしてしまう。
+     それを防ぐため、スマホ幅では入力系のフォントを16pxにする。 */
+  @media (max-width:640px){
+    .field input,.field textarea,select{ font-size:16px; }
+    /* 画面の左右余白を少し詰めて、コンテンツの表示幅を広げる */
+    .wrap{ padding:0 12px; }
+    header{ padding:20px 12px 14px; }
+    h1{ font-size:1.35rem; }
+    /* タップしやすいよう、主要ボタンの縦幅を確保 */
+    .cta{ padding:15px 20px; font-size:1rem; }
+    /* 数量ステッパーのボタンをAppleのタップtarget推奨(44px)に合わせて拡大 */
+    .stepper button,.wild-stepper button{ width:44px; height:44px; font-size:1.25rem; }
+    .stepper .qty{ width:40px; font-size:1.05rem; }
+    /* 履歴・照会画面の操作ボタンも押しやすく */
+    .lk-actions button{ padding:12px; font-size:.9rem; }
+    .gate-actions button{ padding:14px; }
+  }
+  /* iPhoneのホームバー等（セーフエリア）にコンテンツが隠れないよう、下部に余白を確保 */
+  .scroll{ padding-bottom:env(safe-area-inset-bottom); }
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
