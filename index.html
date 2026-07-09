@@ -2,103 +2,2833 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<!-- タブやSNS共有時に表示されるタイトル。好きに変えてください -->
-<title>YUKI🍙❄️の共同購入</title>
+<base target="_top">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
 <style>
-  html, body { margin: 0; padding: 0; height: 100%; background: #EAEEF1; }
-  iframe { display: block; border: 0; width: 100%; height: 100%; }
+  :root{
+    --bg:#EAEEF1; --surface:#fff; --ink:#1E252E; --muted:#5E6B79;
+    --line:#E1E7EC; --primary:#15803D; --primary-dark:#116631;
+    --accent:#B45309; --accent-soft:#FEF3E2; --danger:#B91C1C;
+    --radius:14px; --shadow:0 1px 3px rgba(20,30,40,.07),0 8px 24px rgba(20,30,40,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%}
+  body{
+    font-family:"Noto Sans JP",system-ui,sans-serif;
+    background:var(--bg); color:var(--ink);
+    line-height:1.6; -webkit-font-smoothing:antialiased; overflow:hidden;
+  }
+  .app{display:flex;flex-direction:column;height:100%}
+  .scroll{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .wrap{max-width:600px;margin:0 auto;padding:0 16px}
 
-  /* 読み込み中オーバーレイ：iframeの中身（GASのフォーム）が表示され終わるまで、
-     その手前に重ねて「読み込み中」を出しておく。iframe側のonloadで自動的に消える。 */
-  #loadingOverlay {
-    position: fixed; inset: 0;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 16px;
-    background: #EAEEF1;
-    z-index: 10;
-    transition: opacity .35s ease;
-  }
-  #loadingOverlay.is-hidden {
-    opacity: 0;
-    pointer-events: none;
-  }
-  .loading-spinner {
-    width: 40px; height: 40px;
-    border: 4px solid #D7DEE4;
-    border-top-color: #6C5CE7;
-    border-radius: 50%;
-    animation: loading-spin 0.8s linear infinite;
-  }
-  .loading-text {
-    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
-    font-size: 0.9rem;
-    color: #667;
-  }
-  @keyframes loading-spin {
-    to { transform: rotate(360deg); }
-  }
+  header{padding:28px 16px 18px;text-align:center}
+  h1{font-family:"Zen Maru Gothic",sans-serif;font-weight:700;font-size:1.5rem;margin:0 0 4px;letter-spacing:.01em}
+  header p{margin:0;color:var(--muted);font-size:.9rem}
 
-  /* 常時表示の小さな「直接開く」リンク：Google側の仕様により、埋め込み（iframe）だと
-     ログイン状態などの影響でまれに表示できないことがある。その場合、ブラウザが
-     iframe内にエラー画面を出すだけでも「読み込み完了」の扱いになり得るため、
-     読み込み中オーバーレイの表示状態に関係なく、常にこのリンクだけは操作できるようにしておく。 */
-  #directOpenLink {
-    position: fixed;
-    right: 12px; bottom: 12px;
-    z-index: 20;
-    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
-    font-size: 0.72rem;
-    color: #667;
-    background: rgba(255,255,255,.9);
-    border: 1px solid #D7DEE4;
-    border-radius: 8px;
-    padding: 6px 10px;
-    text-decoration: none;
-  }
+  .steps{display:flex;gap:6px;max-width:600px;margin:14px auto 0;padding:0 16px}
+  .steps span{flex:1;height:4px;border-radius:999px;background:var(--line);transition:background .3s}
+  .steps span.done,.steps span.now{background:var(--primary)}
+
+  .panel{display:none;animation:fade .35s ease}
+  .panel.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .section-head{display:flex;align-items:baseline;justify-content:space-between;margin:22px 0 12px}
+  .section-head h2{font-family:"Zen Maru Gothic",sans-serif;font-size:1.12rem;margin:0;font-weight:700}
+  .back{background:none;border:none;color:var(--primary);font-size:.85rem;cursor:pointer;font-family:inherit;padding:4px}
+  .back:hover{text-decoration:underline}
+
+  .product{display:flex;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:10px;box-shadow:var(--shadow);transition:box-shadow .18s ease,transform .18s ease,border-color .18s ease}
+  .product:hover{box-shadow:0 2px 6px rgba(20,30,40,.09),0 12px 32px rgba(20,30,40,.08);transform:translateY(-1px)}
+  .product.product-col{flex-direction:column;align-items:stretch;gap:0}
+  .product-head{display:flex;gap:12px;align-items:center}
+  .thumb{width:54px;height:54px;border-radius:10px;background:var(--bg);flex:none;object-fit:cover;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:1.4rem}
+  .thumb-wrap{position:relative;width:54px;height:54px;flex:none;cursor:zoom-in}
+  .thumb-wrap .thumb{width:100%;height:100%}
+  .thumb-wrap .zoom-badge{position:absolute;right:-4px;bottom:-4px;width:20px;height:20px;border-radius:50%;background:var(--ink);color:#fff;font-size:.62rem;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+  .info{flex:1;min-width:0}
+  .name{font-weight:700;font-size:.98rem;margin:0}
+  .desc{color:var(--muted);font-size:.8rem;margin:2px 0 0}
+  .price{font-weight:700;font-size:.95rem;margin-top:4px;color:var(--ink)}
+  .price .price-krw{color:var(--muted);font-weight:500;font-size:.82rem;margin-left:2px}
+
+  .members{margin-top:12px;border-top:1px solid var(--line)}
+  .member-row{display:flex;align-items:center;justify-content:space-between;padding:9px 2px;border-bottom:1px solid var(--line)}
+  .member-row:last-child{border-bottom:none}
+  .member-name{font-size:.92rem}
+
+  .stepper{display:flex;align-items:center;flex:none}
+  .stepper button{width:38px;height:38px;border:1px solid var(--line);background:var(--surface);font-size:1.15rem;line-height:1;border-radius:9px;cursor:pointer;color:var(--ink);display:flex;align-items:center;justify-content:center;transition:.15s}
+  .stepper button:hover{border-color:var(--primary);color:var(--primary)}
+  .stepper button:active:not(:disabled){transform:scale(.9)}
+  .stepper button:disabled{opacity:.35;cursor:default;border-color:var(--line);color:var(--ink)}
+  .stepper .qty{width:34px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+
+  .field{margin-bottom:16px}
+  .name-row{display:flex;gap:10px}
+  .name-row .field{flex:1}
+  .field label{display:block;font-size:.85rem;font-weight:500;margin-bottom:6px}
+  .field label .req{color:var(--danger);font-size:.75rem;margin-left:4px}
+  .field input,.field textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-family:inherit;font-size:.95rem;background:var(--surface);color:var(--ink);transition:border-color .15s ease,box-shadow .15s ease}
+  .field input:focus,.field textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(21,128,61,.12)}
+  button:focus-visible,a:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+  .field textarea{resize:vertical;min-height:70px}
+  .hint{font-size:.78rem;color:var(--muted);margin-top:5px}
+  /* リアルタイムバリデーション */
+  .field-msg{font-size:.78rem;color:var(--danger);margin-top:5px;display:flex;align-items:center;gap:3px;animation:fieldMsgIn .15s ease}
+  @keyframes fieldMsgIn{from{opacity:0;transform:translateY(-2px)}to{opacity:1;transform:none}}
+  .field.field-ng input,.field.field-ng textarea{border-color:var(--danger);box-shadow:0 0 0 3px rgba(185,28,28,.10)}
+  .field.field-ok input{border-color:var(--primary)}
+  .field.field-ok{position:relative}
+  .field.field-ok input{padding-right:36px}
+  .field.field-ok::after{content:"✓";position:absolute;right:12px;top:38px;color:var(--primary);font-weight:700;font-size:.95rem;pointer-events:none}
+
+  .summary{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px}
+  .summary .row{display:flex;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--line);font-size:.92rem}
+  .summary .row:last-child{border-bottom:none}
+  .summary .amt{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+  .summary .amt-krw{font-size:.8rem;color:var(--muted);font-weight:400}
+  .summary .total{background:#F4FAF6;font-weight:700}
+  .summary .total .amt{color:var(--primary)}
+  .summary .bonus-row{background:var(--accent-soft)}
+  .summary .bonus-row .nm{color:var(--accent);font-size:.85rem}
+  .summary .bonus-row .amt{color:var(--accent);font-weight:700}
+
+  .summary-info{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px;margin-bottom:16px;font-size:.9rem}
+  .summary-info dt{color:var(--muted);font-size:.78rem;margin-top:8px}
+  .summary-info dt:first-child{margin-top:0}
+  .summary-info dd{margin:2px 0 0;white-space:pre-wrap;word-break:break-word}
+
+  .note-box{font-size:.85rem;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:10px;padding:12px 14px;margin:0}
+  .terms-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:4px 16px;max-height:300px;overflow-y:auto;margin-bottom:14px;font-size:.86rem;line-height:1.7;-webkit-overflow-scrolling:touch}
+  .unbox-note{background:#FFF8E1;border:1px solid #F0D98C;border-radius:var(--radius);padding:11px 14px;margin-bottom:14px;font-size:.84rem;line-height:1.7;color:#6B5300}
+  .terms-box .terms-h3{font-family:"Zen Maru Gothic",sans-serif;font-size:1.05rem;margin:14px 0 8px}
+  .terms-box .terms-h4{font-family:"Zen Maru Gothic",sans-serif;font-size:.92rem;margin:16px 0 6px;color:var(--ink)}
+  .terms-box ul,.terms-box ol{margin:6px 0;padding-left:1.3em}
+  .terms-box li{margin:4px 0}
+  .terms-box .terms-warn{background:var(--accent-soft);border:1px solid #F4D9B0;color:#7c3a09;border-radius:10px;padding:10px 12px;margin:8px 0;font-size:.85rem}
+  .agree-row{display:flex;align-items:flex-start;gap:10px;background:#F4FAF6;border:1px solid #BBE3C7;border-radius:10px;padding:13px 14px;margin-bottom:8px;cursor:pointer}
+  .agree-row input{width:20px;height:20px;flex:none;margin-top:1px;accent-color:var(--primary)}
+  .agree-row .agree-txt{font-size:.9rem;font-weight:500}
+
+  .pay-box{background:var(--accent-soft);border:1px solid #F4D9B0;border-radius:var(--radius);padding:16px;margin-bottom:18px}
+  .pay-box .pay-head{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--accent);margin-bottom:8px;font-family:"Zen Maru Gothic",sans-serif}
+  .pay-box .pay-amt{font-size:1.6rem;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;margin:2px 0 2px}
+  .pay-box .pay-ref{font-size:.84rem;color:var(--accent);font-weight:500;margin:0 0 12px}
+  .pay-box pre{font-family:inherit;white-space:pre-wrap;margin:0;font-size:.9rem;line-height:1.7;color:var(--ink)}
+
+  .upload{display:block;border:2px dashed var(--line);border-radius:var(--radius);padding:22px 16px;text-align:center;cursor:pointer;background:var(--surface);transition:.15s}
+  .upload:hover{border-color:var(--primary);background:#F4FAF6}
+  .upload.filled{border-style:solid;border-color:var(--primary);background:#F4FAF6}
+  .upload .icon{font-size:1.6rem}
+  .upload .txt{font-size:.9rem;margin-top:4px}
+  .upload .sub{font-size:.78rem;color:var(--muted);margin-top:2px}
+  .upload input{display:none}
+  .preview{margin-top:12px;text-align:center}
+  .preview img{max-width:100%;max-height:240px;border-radius:10px;border:1px solid var(--line)}
+  .preview .fn{font-size:.8rem;color:var(--muted);margin-top:6px}
+
+  .bar{flex:none;background:rgba(255,255,255,.96);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom))}
+  .bar .wrap{display:flex;align-items:center;gap:14px}
+  .bar .tot{flex:1}
+  .bar .tot .lbl{font-size:.72rem;color:var(--muted);display:block}
+  .bar .tot .totline{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px}
+  .bar .tot .val{font-size:1.3rem;font-weight:700;font-variant-numeric:tabular-nums}
+  .bar .tot .val-krw{font-size:.9rem;color:var(--muted);font-variant-numeric:tabular-nums}
+  .bar .tot .bonus-pill{background:var(--accent-soft);color:var(--accent);font-size:.72rem;font-weight:700;padding:2px 9px;border-radius:999px;font-family:"Zen Maru Gothic",sans-serif}
+  .cta{background:var(--primary);color:#fff;border:none;border-radius:11px;padding:13px 20px;font-family:"Zen Maru Gothic",sans-serif;font-weight:700;font-size:.95rem;cursor:pointer;transition:background .15s ease,transform .12s ease,box-shadow .15s ease;white-space:nowrap;box-shadow:0 1px 2px rgba(21,128,61,.2)}
+  .cta:hover{background:var(--primary-dark);box-shadow:0 2px 8px rgba(21,128,61,.28)}
+  .cta:active{transform:scale(.97)}
+  .cta:disabled{background:#A8B4BD;cursor:default;box-shadow:none}
+  .receipt{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px;font-size:.9rem}
+  .receipt .rc-title{font-weight:700;margin-bottom:8px}
+  .receipt .rc-row{display:flex;justify-content:space-between;gap:10px;padding:3px 0}
+  .receipt .rc-row.total{border-top:1px solid var(--line);margin-top:6px;padding-top:8px;font-weight:700}
+  .receipt .rc-cust{border-top:1px solid var(--line);margin-top:8px;padding-top:8px}
+  .receipt .rc-cust div{padding:2px 0}
+  .copybtn{display:block;width:100%;padding:10px;margin-bottom:14px;background:#fff;border:1.5px solid var(--primary);color:var(--primary);border-radius:10px;font-family:inherit;font-size:.9rem;font-weight:700;cursor:pointer}
+  .copy-note{margin:0 0 8px;font-size:.82rem;color:var(--muted)}
+  .qr-wrap{margin:18px auto 0;text-align:center;max-width:260px;display:flex;flex-direction:column;align-items:center}
+  .qr-label{font-size:.8rem;font-weight:500;color:var(--muted);margin-bottom:8px}
+  .qr-note{font-size:.72rem;color:var(--muted);line-height:1.6;margin-top:8px;margin-bottom:10px}
+  #qrCanvas,#payQrCanvas{display:inline-flex;align-items:center;justify-content:center;padding:12px;background:#fff;border-radius:12px;border:1px solid var(--line);margin:0 auto}
+  #qrCanvas canvas,#qrCanvas img,#payQrCanvas canvas,#payQrCanvas img{display:block;margin:0 auto}
+  #receiptWrap .receipt{text-align:left}
+  .lk-head{font-size:.95rem;margin:4px 0 12px}
+  .lk-guide{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:14px;font-size:.8rem;line-height:1.6}
+  .lk-guide b{font-weight:700}
+  .lk-guide ul{margin:6px 0 0;padding-left:1.1em}
+  .lk-guide li{margin:4px 0;color:var(--muted)}
+  .lk-event{font-weight:700;margin:18px 0 8px;padding-bottom:4px;border-bottom:2px solid var(--primary)}
+  .lk-order{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:.9rem}
+  .lk-date{color:var(--muted);font-size:.8rem;margin-bottom:6px}
+  .lk-meta{font-size:.82rem;color:var(--muted);padding:1px 0}
+  .lk-meta .lk-oid{color:var(--ink);font-size:.9rem}
+  .lk-oid{font-variant-numeric:tabular-nums}
+  .lk-item{display:flex;justify-content:space-between;gap:10px;padding:2px 0}
+  .lk-sum{border-top:1px solid var(--line);margin-top:6px;padding-top:6px;font-weight:700}
+  .lk-badge{display:inline-block;padding:2px 11px;border-radius:999px;font-size:.78rem;font-weight:700;margin-bottom:8px}
+  .b-paid{background:#E6F4EA;color:#1E7E34}
+  .b-unpaid{background:#FDECEA;color:#C0392B}
+  .b-topup{background:#FFF4E5;color:#B26A00}
+  .b-cancel{background:#ECECEC;color:#777}
+  .lk-due{font-size:.88rem;font-weight:700;color:#B26A00;margin-top:6px}
+  .lk-due-detail{font-size:.76rem;color:var(--muted);margin-top:2px}
+  .lk-due.red{color:#C0392B}
+  .lk-pay{background:var(--primary);border:1.5px solid var(--primary);color:#fff}
+  .lk-actions{display:flex;gap:8px;margin-top:10px}
+  .lk-actions button{flex:1;padding:9px;border-radius:9px;font-family:inherit;font-size:.85rem;font-weight:700;cursor:pointer}
+  .lk-edit{background:#fff;border:1.5px solid var(--primary);color:var(--primary)}
+  #liveStatusBox{margin-bottom:14px}
+  .ghost-btn{width:100%;padding:11px;border-radius:var(--radius);border:1.5px solid var(--primary);background:#fff;color:var(--primary);font-weight:700;font-size:.88rem;cursor:pointer}
+  .ghost-btn:active{background:#F4F1FF}
+  #liveStatusResult{margin-top:10px}
+  .lsr-product{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:11px 14px;margin-bottom:10px;font-size:.84rem}
+  .lsr-title{font-weight:700;margin-bottom:6px}
+  .lsr-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed var(--line)}
+  .lsr-row:last-child{border-bottom:none}
+  .lsr-row.ok{color:#2E7D32}
+  .lsr-row.need{color:#B26A00;font-weight:700}
+  .lk-cancel{background:#fff;border:1.5px solid #C0392B;color:#C0392B}
+  .lk-closed{font-size:.78rem;color:var(--muted);margin-top:8px}
+  .lk-qr-wrap{display:flex;align-items:center;gap:12px;margin:8px 0 4px;padding:10px;background:var(--color-background-secondary,#f6f7f8);border-radius:10px}
+  .lk-qr-canvas{background:#fff;padding:6px;border-radius:8px;border:1px solid var(--line);flex-shrink:0;line-height:0}
+  .lk-qr-canvas canvas,.lk-qr-canvas img{display:block;border-radius:4px}
+  .lk-qr-note{font-size:.74rem;color:var(--muted);line-height:1.5}
+  .lk-stage{margin-top:8px;padding:8px 11px;border-radius:9px;font-size:.84rem;font-weight:700}
+  .lk-stage.shipped{background:#e9f7ef;border:1px solid #b7e4c7;color:#1b7a43}
+  .lk-stage.packing{background:#fff4e5;border:1px solid #ffd8a8;color:#9a5b00}
+  .lk-stage.paid2{background:#eef6ff;border:1px solid #c9e0f7;color:#1f5fa8}
+  .lk-stage.pending2{background:#f5f5f5;border:1px solid #e0e0e0;color:#666;font-weight:400}
+  /* ミニカート */
+  .minicart-panel{background:var(--surface);border-bottom:1px solid var(--line);padding:10px 16px;max-height:220px;overflow-y:auto}
+  .minicart-head{display:flex;justify-content:space-between;align-items:center;font-size:.78rem;color:var(--muted);font-weight:600;margin-bottom:6px}
+  .minicart-close{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:0 2px}
+  .minicart-item{display:flex;justify-content:space-between;align-items:center;font-size:.82rem;padding:4px 0;border-bottom:1px solid var(--line);color:var(--ink);gap:8px}
+  .minicart-item:last-child{border-bottom:none}
+  .minicart-item-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .minicart-item-qty{color:var(--muted);font-size:.78rem;flex-shrink:0}
+  .minicart-item-price{font-weight:600;flex-shrink:0}
+  .minicart-total{display:flex;justify-content:space-between;font-size:.84rem;font-weight:700;padding:6px 0 0;border-top:1px dashed var(--line);margin-top:4px;color:var(--ink)}
+  .minicart-badge{background:#e74c3c;color:#fff;border-radius:10px;font-size:.65rem;font-weight:700;padding:1px 6px;margin-left:6px}
+  /* ステッパー上限バッジ */
+  .stepper-cap{font-size:.68rem;color:var(--muted);margin-left:6px;background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:1px 5px;white-space:nowrap}
+  /* 在庫バッジ */
+  .stock-badge{display:inline-block;font-size:.66rem;font-weight:700;padding:1px 7px;border-radius:999px;margin-left:8px;vertical-align:middle;background:#E6F4EA;color:#1E7E34;border:1px solid #b5dcc0}
+  .stock-badge.low{background:#FFF4E5;color:#B26A00;border-color:#ffd8a8}
+  .stock-badge.sold-out{background:#FBEAEA;color:#C0392B;border-color:#f0bcbc}
+  .product.is-soldout{opacity:.6}
+  .product.is-soldout .thumb{filter:grayscale(.6)}
+  .product.is-locked{background:#F5F7F6}
+  /* 在庫トースト */
+  .stock-toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(10px);background:#333;color:#fff;font-size:.82rem;padding:9px 16px;border-radius:999px;box-shadow:0 4px 16px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:9999;white-space:nowrap}
+  .stock-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* トレカ枠マッチングUI */
+  .matching-card .match-box{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+  .match-type{display:flex;gap:8px;margin-bottom:12px}
+  .mt-btn{flex:1;padding:9px 6px;border:1.5px solid var(--line);background:var(--surface);border-radius:9px;font-size:.82rem;font-weight:600;color:var(--muted);cursor:pointer;transition:.15s}
+  .mt-btn.on{border-color:var(--primary);background:#E6F4EA;color:#1E7E34}
+  .match-label{font-size:.82rem;font-weight:700;color:var(--ink);margin:12px 0 7px}
+  .match-sub{font-size:.68rem;font-weight:400;color:var(--muted);margin-left:4px}
+  .match-hint{font-size:.8rem;color:var(--muted);background:var(--bg);border-radius:8px;padding:10px 12px;margin:4px 0}
+  .chip-row{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{position:relative;padding:7px 13px;border:1.5px solid var(--line);background:var(--surface);border-radius:999px;font-size:.82rem;color:var(--ink);cursor:pointer;transition:.15s}
+  .chip.on{border-color:var(--primary);background:var(--primary);color:#fff}
+  .chip.alt.on{border-color:#B26A00;background:#B26A00;color:#fff}
+  .chip.chip-dim{opacity:.35;cursor:not-allowed}
+  .chip-rank{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;margin-left:5px;padding:0 4px;background:#fff;color:var(--primary);border-radius:999px;font-size:.66rem;font-weight:700;vertical-align:middle}
+  .match-wild{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px}
+  .match-order-note{font-size:.74rem;color:var(--muted);background:var(--bg);border-radius:8px;padding:9px 11px;margin-top:12px;line-height:1.6}
+  .wild-stepper{display:flex;align-items:center;flex:none;gap:0}
+  .wild-stepper button{width:38px;height:38px;border:1px solid var(--line);background:var(--surface);font-size:1.15rem;border-radius:9px;cursor:pointer;color:var(--ink)}
+  .wild-stepper button:disabled{opacity:.4;cursor:not-allowed}
+  .wild-val{min-width:34px;text-align:center;font-weight:700;font-size:.95rem}
+  /* マッチング結果ブロック（確認画面） */
+  .mt-result{margin:12px 0 4px;padding:14px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+  .mt-result-head{font-size:.85rem;font-weight:700;color:var(--ink);margin-bottom:10px}
+  .mt-mine-line{font-size:.8rem;color:var(--muted);margin-bottom:10px;line-height:1.5}
+  .mt-status{font-size:.9rem;font-weight:700;padding:9px 12px;border-radius:9px;margin:6px 0;line-height:1.5}
+  .mt-status.ok{background:#E6F4EA;color:#1E7E34}
+  .mt-status.partial{background:#FFF4E5;color:#B26A00}
+  .mt-status.waitlist{background:#FBEAEA;color:#C0392B}
+  .mt-status.miss{background:transparent;font-weight:500;font-size:.8rem;color:var(--muted);padding:2px 2px}
+  .mt-pending{font-size:.82rem;color:var(--muted);background:var(--bg);border-radius:8px;padding:11px 12px}
+  .mt-fill{font-size:.8rem;color:var(--ink);background:var(--bg);border-radius:8px;padding:10px 12px;margin:8px 0;line-height:1.6}
+  .mt-fill-row{padding:2px 0}
+  .mt-fill-ok{color:var(--muted)}
+  .mt-fill-need{color:var(--ink)}
+  .mt-fill-hint{color:var(--muted)}
+  .mt-reapply-note{font-size:.78rem;color:var(--muted);margin:10px 0 8px;line-height:1.5}
+  .mt-reapply-btn{width:100%;padding:11px;border:none;border-radius:10px;background:var(--primary);color:#fff;font-size:.9rem;font-weight:700;cursor:pointer}
+  .mt-updated{font-size:.68rem;color:var(--muted);text-align:right;margin-top:8px}
+  .mt-extra-sep{border-top:1px dashed var(--line);margin:14px 0}
+  .match-summary-row{margin-top:6px}
+  .match-summary-detail{font-size:.82rem;color:var(--ink);background:#E6F4EA;border-radius:8px;padding:9px 12px;margin:4px 0 2px;line-height:1.5}
+  .match-summary-note{font-size:.74rem;color:var(--muted);padding:6px 12px 2px;line-height:1.5}
+  .qr-cap{font-size:.74rem;color:var(--muted);margin-top:10px;text-align:center;line-height:1.4}
+  .lookup-auto-note{background:#E6F4EA;border:1px solid #abd5b8;border-radius:10px;padding:11px 13px;margin-bottom:12px;font-size:.84rem;line-height:1.6;color:#1E7E34}
+  /* タイムライン（縦型・連続線） */
+  .lk-timeline{margin:12px 0 4px;padding:16px 14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;text-align:left}
+  .tl-title{font-size:.78rem;font-weight:700;color:var(--muted);margin:0 0 14px;display:flex;align-items:center;gap:6px;text-align:left}
+  .tl-steps{position:relative;display:block}
+  .tl-step{position:relative;display:flex;align-items:flex-start;gap:14px;margin:0;padding:0 0 18px 0;text-align:left}
+  .tl-step:last-child{padding-bottom:0}
+  .tl-dot{width:24px;height:24px;min-width:24px;border-radius:50%;background:#e3e6ea;display:flex;align-items:center;justify-content:center;font-size:.72rem;color:#fff;flex:0 0 24px;position:relative;z-index:2;box-sizing:border-box;line-height:1;margin:0}
+  /* アイコン中心を通る縦線。各ステップのアイコン下端から次のアイコンまで伸ばす */
+  .tl-step::before{content:"";position:absolute;left:11px;top:24px;height:calc(100% - 24px);width:2px;background:#e3e6ea;z-index:1}
+  .tl-step:last-child::before{display:none}
+  .tl-step.is-done::before{background:var(--primary)}
+  .tl-body{flex:1 1 auto;min-width:0;padding:0;margin:0}
+  .tl-label{font-size:.92rem;color:#9aa3ad;line-height:1.35;font-weight:500;margin:0;text-align:left}
+  .tl-sub{font-size:.74rem;color:#b0b6bd;margin:2px 0 0 0;line-height:1.4;text-align:left}
+  .tl-step.is-done .tl-dot{background:var(--primary)}
+  .tl-step.is-done .tl-label{color:var(--ink);font-weight:500}
+  .tl-step.is-active .tl-dot{background:var(--primary);box-shadow:0 0 0 3px rgba(21,128,61,.18)}
+  .tl-step.is-active .tl-label{color:var(--primary);font-weight:700}
+  .tl-step.is-active .tl-sub{color:var(--primary)}
+  .tl-step.is-complete .tl-dot{background:var(--primary)}
+  .tl-step.is-complete .tl-label{color:var(--primary);font-weight:700}
+  .dm-notice{background:#fff8f0;border:2px solid #e8622a;border-radius:12px;padding:14px 16px;margin:14px 0;}
+  .dm-notice-head{font-size:.9rem;font-weight:700;color:#b94a0a;margin-bottom:10px;letter-spacing:.01em;}
+  .dm-notice-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px;}
+  .dm-notice-list>li{display:flex;gap:10px;align-items:flex-start;font-size:.84rem;line-height:1.65;color:#333;}
+  .dm-notice-icon{font-size:1.05rem;flex-shrink:0;margin-top:1px;}
+  .dm-notice-sub{list-style:none;padding:0;margin:5px 0 4px;display:flex;flex-direction:column;gap:3px;font-size:.82rem;}
+  .dm-notice-sub li{display:flex;align-items:baseline;gap:5px;}
+  .dm-notice-note{font-size:.78rem;color:#b94a0a;background:#fde8d8;border-radius:6px;padding:5px 9px;margin-top:7px;line-height:1.55;}
+  .twitter-group-box{background:#FFF3CD;border:3px solid #E8622A;border-radius:14px;padding:18px 16px;margin:18px 0;box-shadow:0 4px 14px rgba(232,98,42,.25);animation:tgPulse 1.8s ease-in-out infinite;text-align:center}
+  @keyframes tgPulse{0%,100%{box-shadow:0 4px 14px rgba(232,98,42,.25)}50%{box-shadow:0 4px 22px rgba(232,98,42,.55)}}
+  .twitter-group-head{font-size:1.05rem;font-weight:800;color:#B94A0A;margin-bottom:8px;letter-spacing:.02em}
+  .twitter-group-text{font-size:.86rem;color:#5a3d1a;line-height:1.6;margin:0 0 12px}
+  .twitter-group-btn{display:inline-block;width:100%;box-sizing:border-box;padding:14px;border-radius:10px;background:#1D9BF0;color:#fff;font-weight:800;font-size:.95rem;text-decoration:none}
+  .twitter-group-btn:active{background:#1a8cd8}
+  .lk-cancel-reason{background:#fbeaea;border:1px solid #f0c4c4;border-radius:9px;padding:9px 11px;font-size:.82rem;color:#a23b3b;line-height:1.6}
+  .addr-current{background:#f6f7f8;border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-size:.86rem;line-height:1.7;white-space:pre-wrap}
+  .testbar{background:#2b2f33;color:#fff}
+  .testbar .wrap{padding:10px 16px;font-size:.8rem;line-height:1.6}
+  .testbar button{margin-top:8px;width:100%;padding:9px;border:0;border-radius:8px;background:#e0413e;color:#fff;font-family:inherit;font-weight:700;font-size:.82rem;cursor:pointer}
+  .testbar-msg{margin-top:6px;font-size:.78rem;color:#ffd}
+  .zip-btn{margin-top:8px;padding:8px 12px;border:1px solid var(--accent,#1f6feb);background:#fff;color:var(--accent,#1f6feb);border-radius:8px;font-family:inherit;font-weight:700;font-size:.82rem;cursor:pointer}
+  .addr-choices{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+  .addr-choices button,#addrUpdateBtn{width:100%;padding:13px;border-radius:10px;font-family:inherit;font-weight:700;font-size:.92rem;cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:#fff}
+  .addr-choices button.ghost{background:#fff;color:var(--ink)}
+  #addrUpdateBtn{margin-top:14px}
+  .lk-reapply{margin-top:8px;width:100%;padding:10px;border-radius:9px;border:1px solid var(--line);background:var(--ink);color:#fff;font-family:inherit;font-weight:700;font-size:.85rem;cursor:pointer}
+  .edit-banner{background:#FFF7ED;border:1px solid #F4D9B0;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:.88rem;line-height:1.7}
+  .edit-banner strong{display:block;margin-bottom:2px}
+  .cancel-fee{background:#FDECEA;border:1px solid #F5C6C0;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:.9rem;line-height:1.8}
+  .cancel-fee .big{font-size:1.15rem;font-weight:700}
+  .cancel-note{font-size:.82rem;color:var(--muted);margin:0 0 14px}
+  .proof-guide{background:#F3F6F8;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:.85rem;line-height:1.7}
+  .proof-guide p{margin:0}
+  .proof-guide .sample{display:block;max-width:220px;width:100%;margin-top:8px;border-radius:8px;border:1px solid var(--line);cursor:zoom-in}
+  .returning{background:#F3F6F8;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:22px}
+  .returning-title{font-size:.85rem;font-weight:700;color:var(--muted);margin-bottom:10px;text-align:center}
+  .returning button{display:block;width:100%;background:#fff;border:1.5px solid var(--primary);color:var(--primary);border-radius:10px;padding:11px;font-family:inherit;font-size:.9rem;font-weight:700;cursor:pointer;margin-bottom:8px}
+  .returning button:last-child{margin-bottom:0}
+  .oid-keep{background:#FFF7ED;border:2px solid #E8A33D;border-radius:12px;padding:14px;margin-bottom:14px;text-align:center}
+  .oid-keep .oid-keep-label{display:block;font-size:.82rem;color:#9a6213;font-weight:700;margin-bottom:4px}
+  .oid-keep b{display:block;font-size:1.5rem;font-variant-numeric:tabular-nums;letter-spacing:1px;color:#7c3a09;margin-bottom:8px}
+  .oid-note{display:block;color:#7c3a09;font-size:.82rem;margin-top:0;font-weight:400;line-height:1.6}
+  .later-note{background:#EAF4FB;border:1px solid #BBDDF2;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:.85rem;line-height:1.7}
+  .later-note strong:first-child{display:block;margin-bottom:4px;font-size:.92rem}
+  .dup-btn{display:block;width:100%;margin-top:12px;background:var(--primary);color:#fff;border:none;border-radius:10px;padding:12px;font-family:inherit;font-size:.92rem;font-weight:700;cursor:pointer}
+  .keep-note{background:#FFF7ED;border:2px solid #E8A33D;border-radius:12px;padding:14px;margin:16px 0;font-size:.86rem;line-height:1.7;color:#7c3a09;text-align:left}
+  .keep-note strong{display:block;margin-bottom:4px;font-size:.95rem}
+
+  .done{text-align:center;padding:40px 16px}
+  .done .check{width:64px;height:64px;border-radius:50%;background:var(--primary);color:#fff;font-size:2rem;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+  .done h2{font-family:"Zen Maru Gothic",sans-serif;margin:0 0 8px}
+  .done .oid{display:inline-block;background:#FFF7ED;border:2px solid #E8A33D;border-radius:10px;padding:10px 18px;font-weight:700;font-size:1.4rem;color:#7c3a09;margin:10px 0;font-variant-numeric:tabular-nums;letter-spacing:1px}
+  .done p{color:var(--muted);font-size:.9rem}
+  .linkbtn{background:none;border:1px solid var(--line);border-radius:10px;padding:11px 18px;font-family:inherit;cursor:pointer;color:var(--ink);margin-top:14px}
+
+  .err{background:#FEF2F2;border:1px solid #FCA5A5;color:var(--danger);border-radius:10px;padding:11px 14px;font-size:.88rem;margin-bottom:14px;display:none}
+  .err.show{display:block}
+
+  .gate{max-width:600px;margin:36px auto;padding:0 16px;text-align:center}
+  .gate-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:42px 24px}
+  .gate-badge{display:inline-block;background:var(--ink);color:#fff;font-family:"Zen Maru Gothic",sans-serif;font-weight:700;letter-spacing:.1em;font-size:.76rem;padding:6px 16px;border-radius:999px}
+  .gate-card.is-closed .gate-badge{background:var(--danger)}
+  .gate-title{font-family:"Zen Maru Gothic",sans-serif;margin:18px 0 8px;font-size:1.35rem}
+  .gate-msg{color:var(--muted);white-space:pre-wrap;font-size:.92rem;margin:0;line-height:1.7}
+  .gate-actions{display:flex;flex-direction:column;gap:8px;margin-top:20px}
+  .gate-actions button{padding:11px 14px;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:.9rem;cursor:pointer}
+  .info-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:14px}
+  .info-row{display:flex;justify-content:space-between;align-items:center;font-size:.9rem;padding:3px 0}
+  .info-row span{color:var(--muted)}
+  .info-row b{font-weight:700}
+  .info-note{margin-top:8px;font-size:.8rem;color:var(--danger);line-height:1.6}
+  .restored-note{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#eef6ff;border:1px solid #c9e0f7;border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:.84rem}
+  .restored-note button{flex:none;border:1px solid #c9e0f7;background:#fff;border-radius:8px;padding:6px 10px;font-size:.8rem;cursor:pointer}
+  .pay-sched{margin:10px 0;padding:10px 12px;background:#fff;border:1px solid var(--line);border-radius:10px;text-align:left}
+  .pay-sched .ps-row{display:flex;justify-content:space-between;font-size:.86rem;padding:3px 0}
+  .pay-sched .ps-row span{color:var(--muted)}
+  .pay-sched .ps-add b{color:var(--danger)}
+  .pay-sched .ps-total{border-top:1px dashed var(--line);margin-top:4px;padding-top:6px;font-size:.95rem}
+  .pay-sched .ps-sub{color:var(--muted);font-size:.8rem;padding-left:12px}
+  .pay-sched .ps-ref{color:var(--muted);font-size:.78rem}
+  .pay-sched .ps-ref span{font-weight:400}
+  .pay-sched .ps-total b{font-weight:700}
+  .pay-sched .ps-note{margin-top:8px;font-size:.78rem;color:var(--muted);line-height:1.6}
+  .pay-warn{background:#fff4e5;border:1px solid #ffd8a8;border-radius:9px;padding:9px 11px;margin-bottom:10px;font-size:.82rem;color:#7f4f00;line-height:1.6}
+  .pay-count{margin-bottom:10px;font-size:.86rem;font-weight:700;color:#B26A00;text-align:center}
+  .pay-count.over{color:#C0392B}
+  .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;z-index:50;padding:24px;cursor:zoom-out}
+  .lightbox img{max-width:100%;max-height:100%;border-radius:8px;box-shadow:0 12px 48px rgba(0,0,0,.5)}
+  .lb-close{position:absolute;top:14px;right:16px;width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,.16);color:#fff;font-size:1.6rem;line-height:1;cursor:pointer}
+  @media (prefers-reduced-motion:reduce){.panel{animation:none}}
 </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
-  <!--
-    ★ここだけ編集★
-    下の GAS_BASE_URL を、あなたのGASウェブアプリの公開URLに置き換えてください。
-      例) https://script.google.com/macros/s/XXXXXXXX/exec
 
-    ■ イベントごとのリンクの発行方法
-      このファイルのURLに ?event=イベントキー名 を付けるだけです。
-        event1: https://yukionigiri.github.io/group-purchase/
-        event2: https://yukionigiri.github.io/group-purchase/?event=event2
-        event3: https://yukionigiri.github.io/group-purchase/?event=event3
-      パラメータがない場合は GAS 側の DEFAULT_EVENT（例: event1）が使われます。
-      ?test=1 を付けると動作確認モードになります。
-        テスト用: https://yukionigiri.github.io/group-purchase/?event=event2&test=1
-  -->
-  <div id="loadingOverlay">
-    <div class="loading-spinner"></div>
-    <p class="loading-text">読み込み中です…しばらくお待ちください</p>
+<div id="bootOverlay" style="position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:#EAEEF1;transition:opacity .35s ease;">
+  <div style="width:40px;height:40px;border:4px solid #D7DEE4;border-top-color:#6C5CE7;border-radius:50%;animation:bootspin .8s linear infinite;"></div>
+  <p style="font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic',sans-serif;font-size:.9rem;color:#667;margin:0;">読み込み中です…しばらくお待ちください</p>
+</div>
+<style>
+  @keyframes bootspin { to { transform: rotate(360deg); } }
+  #bootOverlay.is-hidden { opacity: 0; pointer-events: none; }
+</style>
+
+<div class="app">
+<div class="scroll" id="scroll">
+
+<div class="testbar" id="testbar" style="display:none">
+  <div class="wrap">
+    <span>🧪 動作確認モード：この画面で送信したデータは「TEST-」が付き、集計には含まれません。</span>
+    <button type="button" id="testDelBtn">動作確認データを全部削除</button>
+    <div class="testbar-msg" id="testbarMsg"></div>
   </div>
-  <iframe
-    id="gasFrame"
-    src=""
-    allow="clipboard-read; clipboard-write">
-  </iframe>
-  <!-- オーバーレイの状態に関係なく常に押せる、直接開くための小さなリンク -->
-  <a id="directOpenLink" href="#" target="_blank" rel="noopener">うまく表示されない場合はこちら（直接開く）</a>
+</div>
 
-  <script>
-    var GAS_BASE_URL = 'https://script.google.com/macros/s/AKfycbwyz7sT_eujjqaa_H4GVoKiw-LYEgVuUqoE9x6-_mKEdHq72_T3qUVzV_rbeEZWKaWPig/exec';
-    var frame = document.getElementById('gasFrame');
-    function hideOverlay(){ document.getElementById('loadingOverlay').classList.add('is-hidden'); }
-    // 先にonloadのリスナーを設定してから実際のURLに切り替える（空srcの初期状態で
-    // onloadが先に発火してオーバーレイが早く消えてしまうのを避けるため）
-    frame.addEventListener('load', hideOverlay);
-    // 万一onloadが発火しないケースに備え、一定時間後には念のため自動で消す（ずっと出っぱなしを防ぐ）
-    setTimeout(hideOverlay, 20000);
-    // このページの URL パラメータ（?event=event2 など）をそのまま GAS に転送する
-    var params = window.location.search;
-    var targetUrl = GAS_BASE_URL + (params || '');
-    frame.src = targetUrl;
-    document.getElementById('directOpenLink').href = targetUrl;
-  </script>
+<header>
+  <div class="wrap">
+    <h1 id="title"></h1>
+    <p id="subtitle"></p>
+  </div>
+</header>
+<div class="steps" id="steps">
+  <span class="now"></span><span></span><span></span><span></span>
+</div>
+
+<main class="wrap">
+
+  <!-- STEP 1: 商品選択 -->
+  <section class="panel active" id="panel1">
+    <div class="edit-banner" id="editBanner" style="display:none"></div>
+    <div class="err" id="err1"></div>
+    <div class="restored-note" id="restoredNote" style="display:none">
+      <span>✏️ 前回の入力内容を復元しました。</span>
+      <button type="button" id="clearDraftBtn">入力をクリア</button>
+    </div>
+    <div class="info-card" id="infoCard" style="display:none">
+      <div class="info-row" id="infoClose" style="display:none"><span>📅 募集締切</span><b id="infoCloseVal"></b></div>
+      <div class="info-row" id="infoCountdown" style="display:none"><span>⏳ 締切まで</span><b id="infoCountdownVal"></b></div>
+      <div class="info-note">参加者が多い場合、予定時刻より早めに締め切ることがあります。お早めにお申し込みください。</div>
+    </div>
+    <div class="returning" id="returningBox">
+      <div class="returning-title">すでにお申し込みされた方はこちら</div>
+      <button type="button" id="goProof">💳 受付番号でお支払いのスクショを送る</button>
+      <button type="button" id="goLookup">🔍 受付番号で購入内容を確認する</button>
+    </div>
+
+    <!-- DMグループ案内・X移行の必須事項 -->
+    <div class="dm-notice" id="dmNotice">
+      <div class="dm-notice-head">📣 お申し込み前に必ずご確認ください</div>
+      <ul class="dm-notice-list">
+        <li>
+          <span class="dm-notice-icon">📢</span>
+          <span>共同購入の<strong>進捗・発送状況などの案内は DMグループ にて行います</strong>。個別の連絡はいたしません。</span>
+        </li>
+        <li>
+          <span class="dm-notice-icon">⚠️</span>
+          <div>
+            <strong>DMグループへの追加には、以下の2つが完了していることが必要です。</strong>
+            <ul class="dm-notice-sub">
+              <li>✅ <a href="https://x.com/im_not_aerichan" target="_blank" rel="noopener" style="color:inherit;font-weight:700;">@im_not_aerichan</a> のアカウントを<strong>フォロー</strong>済みであること</li>
+              <li>✅ <strong>旧DM → X チャット（新DM）への移行</strong>が完了していること</li>
+            </ul>
+            <p class="dm-notice-note">未対応の場合はDMグループに追加できません。必ず対応してからお申し込みください。</p>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="section-head"><h2>1. 商品を選ぶ</h2></div>
+    <div id="liveStatusBox" style="display:none">
+      <button type="button" id="liveStatusBtn" class="ghost-btn">🔍 いまの枠の状況を見る</button>
+      <div id="liveStatusResult"></div>
+    </div>
+    <div id="productList"></div>
+  </section>
+
+  <!-- STEP 2: お届け先・連絡先 -->
+  <section class="panel" id="panel2">
+    <div class="section-head"><h2>2. お届け先・ご連絡先</h2><button class="back" data-back="1">← 商品にもどる</button></div>
+    <div class="err" id="err2"></div>
+    <div class="name-row">
+      <div class="field"><label>姓<span class="req">必須</span></label><input id="f_lastName" type="text" autocomplete="family-name" placeholder="山田"></div>
+      <div class="field"><label>名<span class="req">必須</span></label><input id="f_firstName" type="text" autocomplete="given-name" placeholder="太郎"></div>
+    </div>
+    <div class="field"><label>Twitter ID（@から始まるID）<span class="req">必須</span></label><input id="f_twId" type="text" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" placeholder="@example"><p class="hint">発送連絡やお問い合わせに使います。</p></div>
+    <div class="field"><label>Twitterユーザー名（プロフィールの表示名）<span class="req">必須</span></label><input id="f_twName" type="text" placeholder="表示名"></div>
+    <div class="field">
+      <label>郵便番号<span class="req">必須</span></label>
+      <input id="f_zip" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="7" placeholder="1234567（ハイフンなし7桁）">
+      <button type="button" id="zipBtn" class="zip-btn">郵便番号から住所を自動入力</button>
+      <p class="hint" id="zipHint">7桁を入力して上のボタンを押すと、都道府県・市区町村が入ります。</p>
+    </div>
+    <div class="name-row">
+      <div class="field"><label>都道府県<span class="req">必須</span></label><input id="f_pref" type="text" autocomplete="address-level1" placeholder="東京都"></div>
+      <div class="field"><label>市区町村<span class="req">必須</span></label><input id="f_city" type="text" autocomplete="address-level2" placeholder="渋谷区"></div>
+    </div>
+    <div class="field"><label>町名・番地<span class="req">必須</span></label><input id="f_town" type="text" autocomplete="address-line1" placeholder="神南1-2-3"></div>
+    <div class="field"><label>建物名・部屋番号（任意）</label><input id="f_bldg" type="text" autocomplete="address-line2" placeholder="○○マンション101"></div>
+    <div class="field"><label>備考（任意）</label><textarea id="f_note" placeholder="ご要望などあればご記入ください"></textarea></div>
+  </section>
+
+  <!-- STEP 3: 内容確認 → 登録 -->
+  <section class="panel" id="panel3">
+    <div class="section-head"><h2>3. 内容の確認</h2><button class="back" id="back3" data-back="2">← 入力にもどる</button></div>
+    <div class="err" id="err3"></div>
+    <div class="summary" id="orderSummary"></div>
+    <dl class="summary-info" id="custSummary"></dl>
+    <div class="terms-box" id="termsBox"></div>
+    <label class="agree-row">
+      <input type="checkbox" id="agree">
+      <span class="agree-txt">上記すべての内容（キャンセル・ご変更の規定を含む）に同意して、お申し込みします。</span>
+    </label>
+    <p class="note-box" id="agreeNote">「登録してお支払い先を表示」を押すと、同意したものとして記録され、お支払い先が表示されます。</p>
+  </section>
+
+  <!-- STEP 4: お支払い & 証明添付 -->
+  <section class="panel" id="panel4">
+    <div class="section-head"><h2>4. お支払い</h2><button class="back" data-back="3">← 確認にもどる</button></div>
+    <div class="err" id="err4"></div>
+    <div class="oid-keep">
+      <span class="oid-keep-label">あなたの受付番号</span>
+      <b id="payOid"></b>
+      <div class="qr-wrap" id="payQrWrap" style="display:none">
+        <p class="qr-label">QRコードでも保存できます</p>
+        <div id="payQrCanvas"></div>
+        <p class="qr-cap">↑ 上の受付番号をそのままQRにしたものです</p>
+        <p class="qr-note">このQRを保存しておけば、次回スマホのカメラで読み取るだけで、受付番号が入力済みの確認ページが開きます。</p>
+        <button class="copybtn" id="payQrSaveBtn" type="button">QRコードを画像で保存</button>
+      </div>
+      <span class="oid-note">📌 必ず控えてください（スクショ・メモ）。購入履歴の確認、未入金のお支払い、お支払い後の追加・キャンセルに必要です。</span>
+    </div>
+    <div class="later-note">
+      <strong>📌 この画面が消えても、あとから送れます</strong>
+      お振込みやスクショ撮影の途中でこの画面が閉じてしまっても大丈夫です。控えた受付番号を使って、トップページの「<strong>お支払い済みの方：受付番号でスクショを送る</strong>」から、あとでスクリーンショットを送信できます。
+    </div>
+    <div class="pay-box">
+      <div class="pay-head">💴 お支払い先（円でお支払いください）</div>
+      <div class="pay-amt" id="payAmount"></div>
+      <div class="pay-ref" id="payRef"></div>
+      <div class="pay-sched" id="paySched" style="display:none"></div>
+      <pre id="payInfo"></pre>
+    </div>
+    <div class="field">
+      <label>お支払い証明スクリーンショット<span class="req">必須</span></label>
+      <div class="pay-warn" id="payWarn" style="display:none">⏱ お支払い証明は、ご登録から<b>1時間以内</b>にご提出ください。1時間を過ぎると、自動的にキャンセルとなります。</div>
+      <div class="pay-count" id="payCount" style="display:none"></div>
+      <div class="proof-guide">
+        <p>💡 <strong>PayPayでお支払いの場合</strong>は、見本のように<strong>送金時間・金額・PayPayマネーで支払ったこと</strong>がわかるスクリーンショットを添付してください。</p>
+        <img class="sample" id="sampleImg" alt="添付見本" style="display:none">
+      </div>
+      <label class="upload" id="uploadLabel">
+        <div class="icon">📷</div>
+        <div class="txt" id="uploadTxt">タップして画像を選ぶ</div>
+        <div class="sub">振込明細・送金完了画面など（5MB以内）</div>
+        <input type="file" id="f_shot" accept="image/*">
+      </label>
+      <div class="preview" id="preview"></div>
+    </div>
+  </section>
+
+  <!-- STEP 5: 完了 -->
+  <section class="panel" id="panel5">
+    <div class="done">
+      <div id="twitterGroupBox" class="twitter-group-box" style="display:none">
+        <div class="twitter-group-head">🚨 重要：グループに参加してください 🚨</div>
+        <p class="twitter-group-text" id="twitterGroupText">今後のご案内はこちらのグループで行います。下のボタンから今すぐご参加ください。</p>
+        <a id="twitterGroupLink" class="twitter-group-btn" href="#" target="_blank" rel="noopener">📩 グループに参加する</a>
+      </div>
+      <div class="check">✓</div>
+      <h2 id="doneTitle">お申し込みありがとうございます</h2>
+      <p id="doneLbl">受付番号</p>
+      <div class="oid" id="doneId"></div>
+      <div class="keep-note" id="keepNote"><strong>📌 受付番号は必ず控えてください</strong>購入履歴の確認、未入金のお支払い、お支払い後の追加・キャンセルのときに必要です。スクリーンショットやメモで保存してください。</div>
+      <div class="qr-wrap" id="qrWrap" style="display:none">
+        <p class="qr-label">QRコードでも保存できます</p>
+        <div id="qrCanvas"></div>
+        <p class="qr-cap">↑ 上の受付番号をそのままQRにしたものです</p>
+        <p class="qr-note">このQRを保存しておけば、次回スマホのカメラで読み取るだけで、受付番号が入力済みの確認ページが開きます。</p>
+        <button class="copybtn" id="qrSaveBtn" type="button">QRコードを画像で保存</button>
+      </div>
+      <p id="doneMsg">ご入金の確認後、順次対応いたします。<br>進捗はポストまたはDMグループにてお知らせしますので、各自でのご確認をお願いいたします。</p>
+      <div id="receiptWrap" style="display:none">
+        <div class="receipt" id="orderReceipt"></div>
+        <p class="copy-note">この内容は、下のボタンでコピーするか、スクリーンショットで控えてください。</p>
+        <button class="copybtn" id="copyBtn" type="button">この内容をコピー</button>
+        <button class="copybtn" id="saveImgBtn" type="button">控えを画像で保存</button>
+      </div>
+      <button class="linkbtn" type="button" id="homeBtn">最初にもどる</button>
+    </div>
+  </section>
+
+  <!-- 証明のみ：受付番号でスクショを送る（ページが消えた後の後追い用） -->
+  <section class="panel" id="panel6">
+    <div class="section-head"><h2>お支払い証明の送信</h2><button class="back" type="button" id="backProof">← 最初にもどる</button></div>
+    <div class="err" id="err6"></div>
+    <p class="hint">登録時に表示された<strong>受付番号</strong>と<strong>お名前（姓・名）</strong>、お支払いのスクリーンショットを送ってください。受付番号がわからない場合は、お手数ですがDMでご連絡ください。</p>
+    <div class="field">
+      <label>受付番号<span class="req">必須</span></label>
+      <input id="f_oid" type="text" inputmode="text" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="例：20260620-203015-123">
+    </div>
+    <div class="name-row">
+      <div class="field"><label>姓<span class="req">必須</span></label><input id="f_proofLn" type="text" autocomplete="family-name" placeholder="山田"></div>
+      <div class="field"><label>名<span class="req">必須</span></label><input id="f_proofFn" type="text" autocomplete="given-name" placeholder="太郎"></div>
+    </div>
+    <div class="pay-count" id="proofCount" style="display:none"></div>
+    <div class="field">
+      <label>お支払い証明スクリーンショット<span class="req">必須</span></label>
+      <div class="pay-warn">⏱ お支払い証明は、ご登録から<b>1時間以内</b>にご提出ください。1時間を過ぎると、自動的にキャンセルとなります。</div>
+      <div class="proof-guide">
+        <p>💡 <strong>PayPayでお支払いの場合</strong>は、見本のように<strong>送金時間・金額・PayPayマネーで支払ったこと</strong>がわかるスクリーンショットを添付してください。</p>
+        <img class="sample" id="sampleImg2" alt="添付見本" style="display:none">
+      </div>
+      <label class="upload" id="uploadLabel2">
+        <div class="icon">📷</div>
+        <div class="txt" id="uploadTxt2">タップして画像を選ぶ</div>
+        <div class="sub">振込明細・送金完了画面など（5MB以内）</div>
+        <input type="file" id="f_shot2" accept="image/*">
+      </label>
+      <div class="preview" id="preview2"></div>
+    </div>
+    <button class="cta" id="sendProofBtn" style="width:100%">支払い証明を送信</button>
+  </section>
+
+  <!-- 購入内容の確認（受付番号で照会。同じTwitter IDの履歴を全イベント分まとめて表示） -->
+  <section class="panel" id="panel7">
+    <div class="section-head"><h2>購入内容の確認</h2><button class="back" type="button" id="backLookup">← 最初にもどる</button></div>
+    <div class="err" id="err7"></div>
+    <div class="lookup-auto-note" id="lookupAutoNote" style="display:none">✅ QRコードを読み取りました。受付番号は入力済みです。<br><strong>ご本人確認のため、お名前（姓・名）を入力して「確認する」を押してください。</strong></div>
+    <p class="hint">受付番号とお名前（姓・名）を入力すると、購入内容を確認できます。ご本人確認のため、お名前は<strong>登録時と同じ</strong>ものを入力してください。同じお名前でのお申し込みは、過去のイベント分もまとめて表示されます。</p>
+    <div class="field">
+      <label>受付番号</label>
+      <input id="f_lookup" type="text" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="例：20260620-203015-123">
+    </div>
+    <div class="name-row">
+      <div class="field"><label>姓</label><input id="f_lookLast" type="text" placeholder="例：山田"></div>
+      <div class="field"><label>名</label><input id="f_lookFirst" type="text" placeholder="例：花子"></div>
+    </div>
+    <button class="cta" id="lookupBtn" type="button" style="width:100%">確認する</button>
+    <div id="lookupResult"></div>
+  </section>
+
+  <!-- キャンセル -->
+  <section class="panel" id="panel8">
+    <div class="section-head"><h2>キャンセル</h2><button class="back" type="button" id="backCancel">← もどる</button></div>
+    <div class="err" id="err8"></div>
+    <div id="cancelBody"></div>
+  </section>
+
+  <!-- 住所確認（2次入金の証明送信後） -->
+  <section class="panel" id="panel9">
+    <div class="section-head"><h2>お届け先の確認</h2></div>
+    <div class="err" id="err9"></div>
+    <p class="lk-guide">2次入金（送料）のお支払い証明を受け付けました。発送前に、お届け先に変更がないかご確認ください。</p>
+    <div class="field"><label>現在のお届け先</label><div class="addr-current" id="addrCurrent"></div></div>
+    <div id="addrChoices" class="addr-choices">
+      <button type="button" id="addrNoChange">変更なし（このまま発送）</button>
+      <button type="button" id="addrChange" class="ghost">住所を変更する</button>
+    </div>
+    <div id="addrEditBox" style="display:none">
+      <button type="button" id="addrEditBack" class="back">← 1つ前に戻る</button>
+      <div class="field">
+        <label>郵便番号<span class="req">必須</span></label>
+        <input id="f2_zip" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="7" placeholder="1234567（ハイフンなし7桁）">
+        <button type="button" id="zip2Btn" class="zip-btn">郵便番号から住所を自動入力</button>
+        <p class="hint" id="zip2Hint">7桁を入力して上のボタンを押すと、都道府県・市区町村が入ります。</p>
+      </div>
+      <div class="name-row">
+        <div class="field"><label>都道府県<span class="req">必須</span></label><input id="f2_pref" type="text" placeholder="東京都"></div>
+        <div class="field"><label>市区町村<span class="req">必須</span></label><input id="f2_city" type="text" placeholder="渋谷区"></div>
+      </div>
+      <div class="field"><label>町名・番地<span class="req">必須</span></label><input id="f2_town" type="text" placeholder="神南1-2-3"></div>
+      <div class="field"><label>建物名・部屋番号（任意）</label><input id="f2_bldg" type="text" placeholder="○○マンション101"></div>
+      <button type="button" id="addrUpdateBtn">この住所に更新する</button>
+    </div>
+  </section>
+
+</main>
+
+<!-- 受付期間外（SOLD OUT / COMING SOON）画面 -->
+<section class="gate" id="gate" style="display:none">
+  <div class="gate-card">
+    <span class="gate-badge"></span>
+    <h2 class="gate-title"></h2>
+    <p class="gate-msg"></p>
+    <div class="gate-actions" id="gateActions" style="display:none">
+      <button type="button" id="gateProof" style="display:none">💳 受付番号でお支払いのスクショを送る</button>
+      <button type="button" id="gateLookup">🔍 受付番号で購入内容を確認する</button>
+    </div>
+  </div>
+</section>
+
+</div><!-- /.scroll -->
+
+<!-- 下部の合計バー（枠の最下部に固定） -->
+<div class="bar" id="bar">
+  <div class="minicart-panel" id="minicartPanel" style="display:none">
+    <div class="minicart-head">
+      <span>選択中の商品</span>
+      <button type="button" class="minicart-close" id="minicartClose">✕</button>
+    </div>
+    <div id="minicartList"></div>
+  </div>
+  <div class="wrap">
+    <div class="tot" id="barTotBtn" style="cursor:pointer" title="選択中の商品を確認">
+      <span class="lbl" id="barLbl">お支払い合計（円）</span>
+      <span class="totline">
+        <span class="val" id="barTotal">¥0</span>
+        <span class="bonus-pill" id="barBonus" style="display:none"></span>
+        <span class="minicart-badge" id="minicartBadge" style="display:none"></span>
+      </span>
+    </div>
+    <button class="cta" id="ctaBtn" disabled>お届け先へ</button>
+  </div>
+</div>
+
+</div><!-- /.app -->
+
+<!-- 画像の拡大表示 -->
+<div class="lightbox" id="lightbox" style="display:none">
+  <button class="lb-close" aria-label="閉じる">×</button>
+  <img id="lbImg" src="" alt="商品画像">
+</div>
+
+<script>
+  // ===== フロント/バックエンド分離構成 =====
+  // このページはGitHub Pages上の普通のWebページとして動作し、データのやり取りだけを
+  // 下のGAS URLへ fetch でPOSTする（iframe埋め込みをやめ、script.google.comの
+  // ログインリダイレクトによる「接続が拒否されました」を回避するため）。
+  const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwyz7sT_eujjqaa_H4GVoKiw-LYEgVuUqoE9x6-_mKEdHq72_T3qUVzV_rbeEZWKaWPig/exec';
+
+  // GASのAPIを呼ぶ共通関数。CORSのプリフライトを避けるため text/plain で送る（単純リクエスト化）。
+  // 返り値は各サーバー関数の戻り値（JSON）。google.script.run の置き換え。
+  async function callApi(action, payload){
+    const res = await fetch(GAS_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: action, payload: payload || {} }),
+      redirect: 'follow'
+    });
+    if(!res.ok) throw new Error('通信に失敗しました（' + res.status + '）');
+    const text = await res.text();
+    try { return JSON.parse(text); }
+    catch(e){ throw new Error('サーバー応答を解釈できませんでした'); }
+  }
+
+  // CONFIG はページ読み込み時に getPageConfig で取得する（旧: GASテンプレートで埋め込み）。
+  // 取得できるまでは空。取得後に boot() で各定数を確定し、初期化を実行する。
+  let CONFIG = {};
+  let CJ = '¥', CK = '₩', BONUS = { enabled:false }, SHOW_BONUS = false;
+  let STATUS = 'open', EVENT_ID = '', TEST = false, LOOKUP_PARAM = '', MATCH_MODE = false;
+  // QRコードに埋め込むフォームの公開URL（GitHub Pages）。イベントは event パラメータで指定。
+  const FORM_PUBLIC_URL = 'https://yukionigiri.github.io/group-purchase/';
+
+  // ★ここに「PayPay支払い見本」の画像URLを入れると、スクショ添付画面に見本が表示されます（空なら非表示）。
+  //   例: 'https://yukionigiri.github.io/group-purchase/paypay-sample.png'
+  const PROOF_SAMPLE_IMG = 'https://raw.githubusercontent.com/YUKIONIGIRI/group-purchase/main/PayPay%E6%94%AF%E6%89%95%E8%A8%BC%E6%98%8E%E3%82%B9%E3%82%AF%E3%82%B7%E3%83%A7%E4%BE%8B.jpeg';
+
+  const state = { step:1, qty:{}, shot:null, shot2:null, orderId:null, registered:false, edit:null, editPay:false, payDone:null, sending:false, matching:{}, matchLocked:{}, matchConfirmedInfo:{}, isFullSetMatch:false };
+  const SCROLLER = document.getElementById('scroll');
+  function scrollTop(){ if(SCROLLER) SCROLLER.scrollTo({top:0,behavior:'smooth'}); }
+
+  function fmtJpy(n){ return CJ + Number(n||0).toLocaleString(); }
+  function fmtKrw(n){ return CK + Number(n||0).toLocaleString(); }
+  function keyOf(id, member){ return id + '\u0001' + (member||''); }
+  function val(id){ return document.getElementById(id).value.trim(); }
+
+  // ===== 入力途中の自動保存（端末内・この回ごと）=====
+  const DRAFT_KEY = 'gp_draft_' + (EVENT_ID || 'default');
+  const FORM_FIELDS = ['f_lastName','f_firstName','f_twId','f_twName','f_zip','f_pref','f_city','f_town','f_bldg','f_note'];
+  function readForm(){ const o={}; FORM_FIELDS.forEach(function(id){ o[id]=val(id); }); return o; }
+
+  // 構造化した住所を1つの文字列にまとめる（都道府県を必ず含むので送料判定にも使える）
+  function composeAddressFrom(ids){
+    const z = val(ids.zip).replace(/[^0-9]/g,'');
+    const zip = z.length===7 ? (z.slice(0,3)+'-'+z.slice(3)) : z;
+    const pref = val(ids.pref), city = val(ids.city), town = val(ids.town), bldg = val(ids.bldg);
+    let s = '';
+    if(zip) s += '〒'+zip+' ';
+    s += pref + city + town;
+    if(bldg) s += ' ' + bldg;
+    return s.trim();
+  }
+  function composeAddress(){ return composeAddressFrom({zip:'f_zip',pref:'f_pref',city:'f_city',town:'f_town',bldg:'f_bldg'}); }
+
+  const PREFS_CLIENT = ['北海道','青森県','岩手県','宮城県','秋田県','山形県','福島県','茨城県','栃木県','群馬県','埼玉県','千葉県','東京都','神奈川県','新潟県','富山県','石川県','福井県','山梨県','長野県','岐阜県','静岡県','愛知県','三重県','滋賀県','京都府','大阪府','兵庫県','奈良県','和歌山県','鳥取県','島根県','岡山県','広島県','山口県','徳島県','香川県','愛媛県','高知県','福岡県','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','沖縄県'];
+
+  // 郵便番号（7桁）から都道府県・市区町村を取得して上書き入力（日本郵便のデータ・zipcloud API）
+  function zipLookupFor(ids){
+    const z = val(ids.zip).replace(/[^0-9]/g,'');
+    const hint = document.getElementById(ids.hint);
+    if(z.length !== 7){ if(hint) hint.textContent = '郵便番号は7桁（ハイフンなし）でご入力ください。'; return; }
+    if(hint) hint.textContent = '住所を検索中…';
+    const cb = 'zipcb_' + Date.now();
+    let s = null;
+    window[cb] = function(res){
+      try{
+        if(res && res.status===200 && res.results && res.results[0]){
+          const r = res.results[0];
+          document.getElementById(ids.pref).value = r.address1 || '';
+          document.getElementById(ids.city).value = r.address2 || '';
+          document.getElementById(ids.town).value = r.address3 || '';   // 押すたびに上書き
+          if(hint) hint.textContent = '住所を入力しました。続けて番地・建物名をご入力ください。';
+          if(ids.onfill) ids.onfill();
+        } else {
+          if(hint) hint.textContent = '郵便番号が見つかりませんでした。都道府県・市区町村を直接ご入力ください。';
+        }
+      }catch(e){ if(hint) hint.textContent = ''; }
+      finally { try{ delete window[cb]; }catch(_){ window[cb]=undefined; } if(s && s.parentNode) s.parentNode.removeChild(s); }
+    };
+    s = document.createElement('script');
+    s.src = 'https://zipcloud.ibsnet.co.jp/api/search?zipcode=' + z + '&callback=' + cb;
+    s.onerror = function(){ if(hint) hint.textContent = '住所の自動入力に失敗しました。都道府県・市区町村を直接ご入力ください。'; try{ delete window[cb]; }catch(_){ window[cb]=undefined; } };
+    document.body.appendChild(s);
+  }
+  function digitsOnly_(id, max){ const el=document.getElementById(id); if(!el) return; el.value = el.value.replace(/[^0-9]/g,'').slice(0, max||7); }
+
+  function saveDraft(){
+    try{
+      if(state.edit || state.registered) return;
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ qty: state.qty, form: readForm() }));
+    }catch(e){}
+  }
+  function clearDraft(){ try{ localStorage.removeItem(DRAFT_KEY); }catch(e){} }
+  function syncSteppers(){
+    document.querySelectorAll('#productList .stepper').forEach(function(st){
+      const id = st.dataset.id;
+      const key = keyOf(id, st.dataset.member || null);
+      const cap = st.dataset.cap ? parseInt(st.dataset.cap,10) : null;
+      const p = (typeof productById==='function') ? productById(id) : null;
+      let v = state.qty[key] || 0;
+      if(cap != null && v > cap) v = cap;
+      // 在庫上限で丸める（商品単位の残数。他メンバー分を考慮）
+      if(p && typeof p.remaining === 'number'){
+        var others = 0;
+        if(p.members && p.members.length){ p.members.forEach(function(mb){ if(keyOf(id,mb)!==key) others += state.qty[keyOf(id,mb)]||0; }); }
+        var allowed = Math.max(0, p.remaining - others);
+        if(v > allowed) v = allowed;
+      }
+      state.qty[key] = v;
+      st.querySelector('.qty').textContent = v;
+      st.querySelector('button[data-act=minus]').disabled = (v === 0);
+      var plusDisabled = false;
+      if(cap != null && v >= cap) plusDisabled = true;
+      if(p && typeof p.remaining === 'number'){
+        var sel = 0;
+        if(p.members && p.members.length){ p.members.forEach(function(mb){ sel += state.qty[keyOf(id,mb)]||0; }); }
+        else { sel = state.qty[keyOf(id,null)]||0; }
+        if(sel >= p.remaining) plusDisabled = true;
+      }
+      st.querySelector('button[data-act=plus]').disabled = plusDisabled;
+    });
+  }
+  function restoreDraft(){
+    try{
+      if(state.edit) return;
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if(!raw) return;
+      const d = JSON.parse(raw); let any = false;
+      if(d && d.qty){ Object.keys(d.qty).forEach(function(k){ if(d.qty[k] > 0){ state.qty[k] = d.qty[k]; any = true; } }); syncSteppers(); }
+      if(d && d.form){ FORM_FIELDS.forEach(function(id){ if(d.form[id]){ document.getElementById(id).value = d.form[id]; any = true; } }); }
+      updateTotal();
+      if(any) document.getElementById('restoredNote').style.display = 'flex';
+    }catch(e){}
+  }
+  function resetDraft(){
+    clearDraft();
+    Object.keys(state.qty).forEach(function(k){ state.qty[k] = 0; });
+    syncSteppers();
+    FORM_FIELDS.forEach(function(id){ document.getElementById(id).value = ''; });
+    updateTotal();
+    document.getElementById('restoredNote').style.display = 'none';
+  }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+  // CONFIG取得後に、ヘッダーのタイトル等のCONFIG依存の初期表示を反映する（分離構成の起動処理から呼ぶ）
+  function applyConfigToDom_(){
+    document.getElementById('title').textContent = CONFIG.title || '共同購入';
+    document.getElementById('subtitle').textContent = CONFIG.subtitle || '';
+    document.title = CONFIG.title || '共同購入';
+  }
+
+  // QRコード生成（フォームURL＋受付番号をエンコード→読み取ると照会画面が開く）
+  // canvasId: 描画先要素ID, wrapId: 表示エリアID, size: px（省略時128）
+  function lookupUrlFor(orderId){
+    var u = FORM_PUBLIC_URL + '?';
+    if(EVENT_ID) u += 'event=' + encodeURIComponent(EVENT_ID) + '&';
+    u += 'lookup=' + encodeURIComponent(orderId);
+    return u;
+  }
+  function showQR(orderId, canvasId, wrapId, size){
+    canvasId = canvasId || 'qrCanvas';
+    wrapId   = wrapId   || 'qrWrap';
+    size     = size     || 128;
+    const wrap   = document.getElementById(wrapId);
+    const canvas = document.getElementById(canvasId);
+    if(!canvas || !orderId) return;
+    canvas.innerHTML = '';
+    try {
+      new QRCode(canvas, {
+        text: lookupUrlFor(orderId),
+        width: size, height: size,
+        colorDark: '#000000', colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+      if(wrap) wrap.style.display = 'flex';
+    } catch(e) { if(wrap) wrap.style.display = 'none'; }
+  }
+
+  // ここから下は「CONFIGを取得してから」実行する必要がある初期化処理。
+  // 分離構成では getPageConfig の取得完了後に boot() として一括実行する。
+  function boot(){
+  (function initQrSave(){
+    function bindSaveBtn(btnId, canvasId){
+      var btn = document.getElementById(btnId);
+      if(!btn) return;
+      btn.addEventListener('click', function(){
+        var img = document.querySelector('#'+canvasId+' img');
+        var cv  = document.querySelector('#'+canvasId+' canvas');
+        var src = '';
+        if(img && img.src) src = img.src;
+        else if(cv){ try{ src = cv.toDataURL('image/png'); }catch(e){} }
+        if(!src){ alert('QRコードの取得に失敗しました。スクリーンショットでご保存ください。'); return; }
+        var a = document.createElement('a');
+        a.href = src;
+        a.download = 'QR_受付番号_' + (state.orderId || 'order') + '.png';
+        a.click();
+      });
+    }
+    bindSaveBtn('qrSaveBtn',    'qrCanvas');     // 完了画面
+    bindSaveBtn('payQrSaveBtn', 'payQrCanvas');  // お支払い画面
+  })();
+  (function initTestMode(){
+    if(!TEST) return;
+    const bar = document.getElementById('testbar');
+    if(bar) bar.style.display = 'block';
+    const btn = document.getElementById('testDelBtn');
+    const msg = document.getElementById('testbarMsg');
+    if(btn) btn.addEventListener('click', function(){
+      if(!confirm('「TEST-」で始まる動作確認データを、スプレッドシート・Notion・Driveからすべて削除します。よろしいですか？')) return;
+      btn.disabled = true; btn.textContent = '削除中…'; if(msg) msg.textContent = '';
+      callApi('deleteTestData', {})
+        .then(function(res){
+          btn.disabled = false; btn.textContent = '動作確認データを全部削除';
+          if(msg) msg.textContent = (typeof res === 'string' ? res : (res && res.message)) || '削除しました。';
+        })
+        .catch(function(err){
+          btn.disabled = false; btn.textContent = '動作確認データを全部削除';
+          if(msg) msg.textContent = '削除に失敗しました：' + err.message;
+        });
+    });
+  })();
+
+  // トップの案内（締切・カウントダウン・早期締切のお知らせ）
+  (function initInfoCard(){
+    try{
+      if (!CONFIG.closeAt) return;   // 締切が設定されている回のみ表示
+      document.getElementById('infoCloseVal').textContent = CONFIG.closeAt;
+      document.getElementById('infoClose').style.display = 'flex';
+      document.getElementById('infoCard').style.display = 'block';
+      const dl = new Date(String(CONFIG.closeAt).replace(/-/g,'/'));
+      if (isNaN(dl.getTime())) return;
+      const row = document.getElementById('infoCountdown');
+      const el = document.getElementById('infoCountdownVal');
+      row.style.display = 'flex';
+      let timer = null;
+      const tick = function(){
+        let s = Math.floor((dl.getTime() - Date.now())/1000);
+        if (s <= 0){ el.textContent = '締切時刻を過ぎました'; el.style.color = 'var(--danger)'; if(timer) clearInterval(timer); return; }
+        const d = Math.floor(s/86400); s -= d*86400;
+        const h = Math.floor(s/3600); s -= h*3600;
+        const m = Math.floor(s/60); const sec = s - m*60;
+        const p = function(n){ return (n<10?'0':'')+n; };
+        el.textContent = (d>0 ? d+'日 ' : '') + p(h)+':'+p(m)+':'+p(sec);
+        if (d===0 && h<1) el.style.color = 'var(--danger)';
+      };
+      tick();
+      timer = setInterval(tick, 1000);
+    }catch(e){}
+  })();
+
+  // 受付状態に応じたゲート（open 以外は注文できない）
+  function showGate(kind){
+    document.getElementById('steps').style.display = 'none';
+    document.getElementById('bar').style.display = 'none';
+    document.querySelector('main').style.display = 'none';
+    const g = document.getElementById('gate'); g.style.display = 'block';
+    let badge, title, msg;
+    if(kind === 'closed'){ badge='CLOSED'; title='受付終了'; msg = CONFIG.msgClosed || 'この回の受付は終了しました。'; }
+    else if(kind === 'before'){ badge='COMING SOON'; title='受付開始前'; msg = (CONFIG.msgBefore || 'まだ受付前です。') + (CONFIG.openAt ? '\n受付開始：'+CONFIG.openAt : ''); }
+    else { badge='NOT FOUND'; title='ページが見つかりません'; msg = 'URL（?event=）をご確認ください。'; }
+    g.querySelector('.gate-card').className = 'gate-card' + (kind==='closed' ? ' is-closed' : '');
+    g.querySelector('.gate-badge').textContent = badge;
+    g.querySelector('.gate-title').textContent = title;
+    g.querySelector('.gate-msg').textContent = msg;
+    // 受付終了後も、購入履歴の確認はできる。さらに締切後グレース中はお支払い証明の送信もできる。
+    document.getElementById('gateActions').style.display = (kind === 'closed') ? 'flex' : 'none';
+    document.getElementById('gateProof').style.display = (kind === 'closed' && CONFIG.proofGrace) ? 'block' : 'none';
+  }
+  function openFromGate(fn){
+    document.getElementById('gate').style.display = 'none';
+    document.querySelector('main').style.display = '';
+    fn();
+  }
+  if (STATUS !== 'open') showGate(STATUS);
+  document.getElementById('gateLookup').addEventListener('click', function(){ openFromGate(showLookupMode); });
+  document.getElementById('gateProof').addEventListener('click', function(){ openFromGate(showProofMode); });
+
+  // 同意文の表示＆チェック連動
+  if (CONFIG.terms) document.getElementById('termsBox').innerHTML = CONFIG.terms;
+  if (MATCH_MODE){
+    // マッチングモードは「枠が確保できた人だけ」お支払いに進む仕組みのため、
+    // 最初の画面にある「受付番号でお支払いのスクショを送る」入り口は非表示にする
+    // （マッチング前に先走って支払ってしまう人を防ぐため）。購入内容の確認はこれまでどおり使える。
+    var goProofBtn = document.getElementById('goProof');
+    if (goProofBtn) goProofBtn.style.display = 'none';
+    var lsBox = document.getElementById('liveStatusBox');
+    if (lsBox) lsBox.style.display = 'block';
+    var an = document.getElementById('agreeNote');
+    if(an) an.textContent = '「申し込む」を押すと、同意したものとして記録され、お申し込みが完了します。お支払いは、マッチングで枠を確保できた場合のみ必要です。';
+    var lsBtn = document.getElementById('liveStatusBtn');
+    if (lsBtn) lsBtn.addEventListener('click', loadLiveMatchStatus);
+  }
+  const agreeBox = document.getElementById('agree');
+  agreeBox.addEventListener('change', function(){
+    if(state.step === 3 && !state.registered){ document.getElementById('ctaBtn').disabled = !agreeBox.checked; }
+  });
+
+  // ---- 「いまの枠の状況」をその場で確認する（マッチングモード専用・任意のコンテナに描画できる汎用版）----
+  function renderLiveStatusHtml_(res){
+    if(!res || !res.ok){ return '<div class="err" style="display:block">'+escapeHtml((res&&res.error)||'状況を取得できませんでした。')+'</div>'; }
+    var h = '';
+    (res.products||[]).forEach(function(p){
+      h += '<div class="lsr-product">';
+      h += '<div class="lsr-title">'+escapeHtml(p.productName)+'（成立 '+p.confirmedSets+' セット／'+p.nextSetNo+'セット目を調整中）</div>';
+      p.members.forEach(function(m){
+        const ok = m.candidates > 0;
+        h += '<div class="lsr-row '+(ok?'ok':'need')+'"><span>'+escapeHtml(m.name)+'</span><span>'+(ok ? ('✅ 応募 '+m.candidates+'人') : '🔲 まだ応募なし')+'</span></div>';
+      });
+      h += '</div>';
+    });
+    h += '<div style="font-size:.7rem;color:var(--muted);text-align:right">確認時刻：'+escapeHtml((res.updatedAt||'').replace('T',' ').slice(0,16))+'</div>';
+    return h;
+  }
+  function loadLiveMatchStatusInto(eventId, containerId, btn){
+    const box = document.getElementById(containerId);
+    if(!box) return;
+    const prevLabel = btn ? btn.textContent : '';
+    if(btn){ btn.disabled = true; btn.textContent = '確認中…'; }
+    callApi('getLiveMatchStatus', { eventId: eventId })
+      .then(function(res){
+        if(btn){ btn.disabled = false; btn.textContent = prevLabel; }
+        box.innerHTML = renderLiveStatusHtml_(res);
+      })
+      .catch(function(err){
+        if(btn){ btn.disabled = false; btn.textContent = prevLabel; }
+        box.innerHTML = '<div class="err" style="display:block">状況を取得できませんでした。時間をおいて再度お試しください。</div>';
+      });
+  }
+  function loadLiveMatchStatus(){
+    loadLiveMatchStatusInto(EVENT_ID, 'liveStatusResult', document.getElementById('liveStatusBtn'));
+  }
+
+  // ---- 商品リスト描画（メンバー対応）----
+  function stepperHtml(id, member, cap, soldOut){
+    const capHtml = cap ? '<span class="stepper-cap">最大'+cap+'個</span>' : '';
+    const dis = soldOut ? ' disabled' : '';
+    return '<div class="stepper" data-id="'+escapeHtml(id)+'" data-member="'+escapeHtml(member||'')+'"'+(cap?' data-cap="'+cap+'"':'')+'>' +
+      '<button data-act="minus" disabled>−</button>' +
+      '<span class="qty">0</span>' +
+      '<button data-act="plus"'+dis+'>＋</button>' +
+      capHtml +
+    '</div>';
+  }
+  function priceHtml(p){ return '<div class="price">'+fmtJpy(p.priceJPY)+'</div>'; }
+
+  // ===== トレカ枠マッチングUI =====
+  // 各メンバー付き商品ごとに「全セット購入 / 枠マッチング（希望・代替・自由枠）」を選ぶ
+  function matchingUiHtml(p){
+    const m = state.matching[p.id] || { applyType:'partial', prefs:[], alts:[], wild:0, combine:'none', setCount:1 };
+    const isFull = m.applyType === 'full';
+    let h = '<div class="match-box" data-pid="'+escapeHtml(p.id)+'">';
+    h += '<div class="match-type">';
+    h += '<button type="button" class="mt-btn'+(!isFull?' on':'')+'" data-mt="partial">枠を選んで申込</button>';
+    h += '<button type="button" class="mt-btn'+(isFull?' on':'')+'" data-mt="full">全メンバーセット購入</button>';
+    h += '</div>';
+
+    if (isFull){
+      const setCount = m.setCount || 1;
+      h += '<p class="match-hint">全'+p.members.length+'メンバーを1セットとして、まるごと購入します。</p>';
+      h += '<div class="match-wild"><span class="match-label" style="margin:0">セット数<span class="match-sub">（何セット購入するか）</span></span>'
+         + '<div class="wild-stepper" data-role="setcount">'
+         + '<button type="button" data-sc="-1"'+(setCount<=1?' disabled':'')+'>−</button>'
+         + '<span class="wild-val">'+setCount+'</span>'
+         + '<button type="button" data-sc="1">＋</button>'
+         + '</div></div>';
+    } else {
+      h += '<p class="match-label">希望メンバー<span class="match-sub">（タップで選択・選んだ順が優先順位・取れた分だけ確保）</span></p>';
+      h += '<div class="chip-row" data-role="pref">';
+      p.members.forEach(function(mb){
+        const idx = m.prefs.indexOf(mb);
+        const on = idx >= 0;
+        h += '<button type="button" class="chip'+(on?' on':'')+'" data-mb="'+escapeHtml(mb)+'">'
+           + escapeHtml(mb) + (on ? '<span class="chip-rank">'+(idx+1)+'</span>' : '') + '</button>';
+      });
+      h += '</div>';
+
+      // 抱き合わせ（追加で引き取る枠）の有無を選ぶ
+      const combine = m.combine || 'none';
+      h += '<p class="match-label">抱き合わせ（希望が取れた枠に加えて、追加で引き取る枠）</p>';
+      h += '<div class="match-type" data-role="combine">';
+      h += '<button type="button" class="mt-btn'+(combine==='none'?' on':'')+'" data-cb="none">無し</button>';
+      h += '<button type="button" class="mt-btn'+(combine==='yes'?' on':'')+'" data-cb="yes">指定・自由枠を使う</button>';
+      h += '</div>';
+
+      if (combine === 'yes'){
+        h += '<p class="match-label">指定メンバー<span class="match-sub">（希望確保後、枠が余れば引き取ってよい相手・任意）</span></p>';
+        h += '<div class="chip-row" data-role="alt">';
+        p.members.forEach(function(mb){
+          const disabledByPref = m.prefs.indexOf(mb) >= 0;
+          const on = m.alts.indexOf(mb) >= 0;
+          h += '<button type="button" class="chip alt'+(on?' on':'')+(disabledByPref?' chip-dim':'')+'" data-mb="'+escapeHtml(mb)+'"'+(disabledByPref?' disabled':'')+'>'
+             + escapeHtml(mb) + '</button>';
+        });
+        h += '</div>';
+        h += '<div class="match-wild"><span class="match-label" style="margin:0">自由枠<span class="match-sub">（誰でもよいので追加で引き取れる上限枚数・任意）</span></span>'
+           + '<div class="wild-stepper" data-role="wild">'
+           + '<button type="button" data-wd="-1"'+(m.wild<=0?' disabled':'')+'>−</button>'
+           + '<span class="wild-val">'+m.wild+'</span>'
+           + '<button type="button" data-wd="1">＋</button>'
+           + '</div></div>';
+        if (m.alts.length){
+          h += '<p class="match-order-note">💡 枠の埋まる順番：①希望メンバー → ②指定メンバー → ③自由枠、の順に確保を試みます。指定メンバーの枠を使い切ってから自由枠が使われます。ただし指定メンバーは他の申込者も同じ人を指定・希望している場合があり、必ず確保できるとは限りません。指定メンバー・自由枠をすべて選んでいても、実際には「希望メンバー＋自由枠」の組み合わせだけで枠が確保される（指定メンバー分は確保されない）こともあります。</p>';
+        } else {
+          h += '<p class="match-order-note">💡 指定メンバーは選ばなくても構いません。「希望メンバー＋自由枠」だけの組み合わせも可能です。自由枠は、希望メンバーの枠を確保できた後、残りの枠から誰でもよいので追加で引き取る仕組みです（必ず自由枠ぶん確保できるとは限りません）。</p>';
+        }
+      }
+    }
+    h += '</div>';
+    return h;
+  }
+
+  function handleMatchClick(e){
+    const box = e.target.closest('.match-box');
+    if(!box) return false;
+    const pid = box.dataset.pid;
+    const m = state.matching[pid] || (state.matching[pid] = { applyType:'partial', prefs:[], alts:[], wild:0, combine:'none', setCount:1 });
+    const mtBtn = e.target.closest('.mt-btn');
+    if(mtBtn){
+      if(mtBtn.dataset.mt){ m.applyType = mtBtn.dataset.mt; rebuildProductList(); return true; }
+      if(mtBtn.dataset.cb){
+        m.combine = mtBtn.dataset.cb;
+        if(m.combine === 'none'){ m.alts = []; m.wild = 0; }   // 無しにしたら指定・自由枠をクリア
+        rebuildProductList(); return true;
+      }
+    }
+    const wd = e.target.closest('[data-wd]');
+    if(wd){ const d = parseInt(wd.dataset.wd,10); m.wild = Math.max(0, (m.wild||0) + d); rebuildProductList(); return true; }
+    const sc = e.target.closest('[data-sc]');
+    if(sc){ const d = parseInt(sc.dataset.sc,10); m.setCount = Math.max(1, (m.setCount||1) + d); rebuildProductList(); return true; }
+    const chip = e.target.closest('.chip');
+    if(chip && !chip.disabled){
+      const row = chip.closest('.chip-row');
+      const mb = chip.dataset.mb;
+      if(row.dataset.role === 'pref'){
+        const i = m.prefs.indexOf(mb);
+        if(i>=0) m.prefs.splice(i,1); else m.prefs.push(mb);
+        const ai = m.alts.indexOf(mb); if(ai>=0) m.alts.splice(ai,1);
+      } else {
+        const i = m.alts.indexOf(mb);
+        if(i>=0) m.alts.splice(i,1); else m.alts.push(mb);
+      }
+      rebuildProductList(); return true;
+    }
+    return false;
+  }
+
+  // マッチング選択の「見込み」を計算：最大何枚・最大いくらになりうるか（申込時点の目安表示用）
+  // 商品1つぶんの見込み（枚数・最大金額）を計算する内部ヘルパー
+  function matchingEstimateForProduct(p){
+    if(!(p.members && p.members.length)) return null;
+    const m = state.matching[p.id];
+    if(!m) return null;
+    const unit = Number(p.priceJPY)||0;
+    if(m.applyType === 'full'){
+      const sc = Math.max(1, m.setCount||1);
+      return { productId:p.id, productName:p.name, count: p.members.length*sc, maxJpy: p.members.length*unit*sc, unit: unit, isFull:true, setCount: sc };
+    }
+    if(m.prefs && m.prefs.length){
+      // 最大枚数の目安 ＝ 希望枚数 ＋（抱き合わせありなら 指定メンバー数＋自由枠の枚数）。
+      // 指定メンバー・自由枠は「枠が余ればその分だけ追加で引き取れる」ものなので上限は全メンバー数。
+      // 実際に何枚確保できるかはマッチング結果次第（あくまで最大の目安）。
+      const alts = (m.combine === 'yes') ? (m.alts||[]).length : 0;
+      const wild = (m.combine === 'yes') ? (m.wild||0) : 0;
+      const maxCount = Math.min(p.members.length, m.prefs.length + alts + wild);
+      return { productId:p.id, productName:p.name, count: maxCount, maxJpy: maxCount*unit, unit: unit, isFull:false, prefCount: m.prefs.length, alts: alts, wild: wild };
+    }
+    return null;
+  }
+
+  // 選択中の全商品ぶんを合算した見込み（枚数・最大金額）。商品ごとの内訳は items に入る。
+  function matchingEstimate(){
+    if(!MATCH_MODE) return null;
+    var items = [];
+    (CONFIG.products||[]).forEach(function(p){
+      const est = matchingEstimateForProduct(p);
+      if(est) items.push(est);
+    });
+    if(!items.length) return null;
+    var count = 0, maxJpy = 0;
+    items.forEach(function(it){ count += it.count; maxJpy += it.maxJpy; });
+    return { count: count, maxJpy: maxJpy, items: items, isFull: items.length===1 && items[0].isFull };
+  }
+
+  function hasMatchingSelection(){
+    if(!MATCH_MODE) return false;
+    return Object.keys(state.matching).some(function(pid){
+      const m = state.matching[pid];
+      if(!m) return false;
+      if(m.applyType === 'full') return true;
+      return (m.prefs && m.prefs.length>0);
+    });
+  }
+
+
+  // 送信用のマッチング情報を「選択のあるメンバー付き商品ぶん、全部まとめて」配列で組み立てる（新規登録用）
+  function buildMatchingPayloadArray(){
+    if(!MATCH_MODE) return [];
+    var list = [];
+    (CONFIG.products||[]).forEach(function(p){
+      if(!(p.members && p.members.length)) return;
+      const m = state.matching[p.id];
+      if(!m) return;
+      if(m.applyType === 'full'){ list.push({ productId:p.id, applyType:'full', prefs:[], alts:[], wild:0, setCount: Math.max(1, m.setCount||1) }); return; }
+      if(m.prefs && m.prefs.length){
+        const useCombine = (m.combine === 'yes');
+        list.push({ productId:p.id, applyType:'partial', prefs:m.prefs.slice(),
+                alts: useCombine ? (m.alts||[]).slice() : [],
+                wild: useCombine ? (m.wild||0) : 0 });
+      }
+    });
+    return list;
+  }
+
+  function rebuildProductList(){
+    if (!CONFIG.products) return;
+    const wrap = document.getElementById('productList');
+    const savedScroll = SCROLLER ? SCROLLER.scrollTop : 0;   // 再描画でスクロール位置が飛ばないよう保持
+    wrap.innerHTML = '';
+    CONFIG.products.forEach(function(p){
+      const thumb = p.image
+        ? '<div class="thumb-wrap" data-full="'+escapeHtml(p.image)+'"><img class="thumb" src="'+escapeHtml(p.image)+'" alt=""><span class="zoom-badge">🔍</span></div>'
+        : '<div class="thumb">🛍️</div>';
+      const el = document.createElement('div');
+
+      // 在庫バッジ（stockが設定されている商品のみ）。ただしマッチングモードは「枠マッチング」で
+      // 後から確保枚数が決まる仕組みのため、通常の在庫（残り点数・売り切れ）概念は表示しない。
+      var stockBadge = '';
+      var soldOut = false;
+      if (!MATCH_MODE && typeof p.remaining === 'number'){
+        if (p.remaining <= 0){ soldOut = true; stockBadge = '<span class="stock-badge sold-out">売り切れ</span>'; }
+        else if (p.remaining <= 5){ stockBadge = '<span class="stock-badge low">残り'+p.remaining+'点</span>'; }
+        else { stockBadge = '<span class="stock-badge">在庫あり</span>'; }
+      }
+      const infoHtml = '<div class="info"><p class="name">'+escapeHtml(p.name)+stockBadge+'</p>' +
+                       (p.desc ? '<p class="desc">'+escapeHtml(p.desc)+'</p>' : '') + priceHtml(p) + '</div>';
+
+      if (p.members && p.members.length){
+        if (MATCH_MODE){
+          if(state.matchLocked[p.id]){
+            // 希望修正モードで、すでに枠が確定している商品は編集不可（内容だけ表示）
+            const lk = state.matchLocked[p.id];
+            el.className = 'product product-col matching-card is-locked';
+            let lockedBody = '<div class="mt-status ok" style="margin-top:10px">✅ 枠を確保済み：<b>'+escapeHtml((lk.confirmed||[]).join('、'))+'</b></div>'
+              + '<div class="mt-reapply-note">確定済みのため、この商品の内容は変更できません。</div>';
+            el.innerHTML = '<div class="product-head">'+thumb+infoHtml+'</div>' + lockedBody;
+            wrap.appendChild(el);
+            return;
+          }
+          if(!state.matching[p.id]) state.matching[p.id] = { applyType:'partial', prefs:[], alts:[], wild:0, combine:'none', setCount:1 };
+          el.className = 'product product-col matching-card' + (soldOut ? ' is-soldout' : '');
+          const confirmedInfo = state.matchConfirmedInfo[p.id];
+          const confirmedNote = confirmedInfo
+            ? '<div class="mt-status ok" style="margin-top:10px">✅ すでに確保済み（維持されます）：<b>'+escapeHtml(confirmedInfo.confirmed.join('、'))+'</b></div>'
+              + '<div class="mt-reapply-note">下記は「まだ確保できていない分」の希望です。確保済みのメンバーはこの変更で失われません。</div>'
+            : '';
+          el.innerHTML = '<div class="product-head">'+thumb+infoHtml+'</div>' + confirmedNote + matchingUiHtml(p);
+        } else {
+          let rows = '';
+          p.members.forEach(function(mb){
+            if(!(keyOf(p.id, mb) in state.qty)) state.qty[keyOf(p.id, mb)] = 0;
+            rows += '<div class="member-row"><span class="member-name">'+escapeHtml(mb)+'</span>'+stepperHtml(p.id, mb, p.maxPerMember, soldOut)+'</div>';
+          });
+          el.className = 'product product-col' + (soldOut ? ' is-soldout' : '');
+          el.innerHTML = '<div class="product-head">'+thumb+infoHtml+'</div><div class="members">'+rows+'</div>';
+        }
+      } else {
+        if(!(keyOf(p.id, null) in state.qty)) state.qty[keyOf(p.id, null)] = 0;
+        el.className = 'product' + (soldOut ? ' is-soldout' : '');
+        el.innerHTML = thumb + infoHtml + stepperHtml(p.id, null, p.maxPerMember, soldOut);
+      }
+      wrap.appendChild(el);
+    });
+    syncSteppers();
+    updateTotal();
+    if (SCROLLER) SCROLLER.scrollTop = savedScroll;   // 保持していたスクロール位置に戻す（チップ選択で画面が飛ぶのを防ぐ）
+  }
+
+  // 商品一覧の初期描画：MATCH_MODEを正しく判定するrebuildProductList()を必ず使う。
+  // クリックリスナーはここで一度だけ登録する（以降の再描画はrebuildProductList内でinnerHTMLを差し替えるだけ）。
+  (function initProductList(){
+    const wrap = document.getElementById('productList');
+    if(!wrap) return;
+    wrap.addEventListener('click', function(e){
+      const z = e.target.closest('.thumb-wrap');
+      if(z && z.dataset.full){ openLightbox(z.dataset.full); return; }
+      if(MATCH_MODE && handleMatchClick(e)) return;   // マッチングUIの操作
+      const b = e.target.closest('button[data-act]');
+      if(!b) return;
+      changeQty(b.closest('.stepper'), b.dataset.act === 'plus' ? 1 : -1);
+    });
+    rebuildProductList();
+  })();
+
+  // 自動保存：入力監視・前回入力の復元・クリア
+  (function initDraft(){
+    FORM_FIELDS.forEach(function(id){
+      const el = document.getElementById(id);
+      if(el) el.addEventListener('input', saveDraft);
+    });
+    const cb = document.getElementById('clearDraftBtn');
+    if(cb) cb.addEventListener('click', resetDraft);
+    const zipEl = document.getElementById('f_zip');
+    if(zipEl) zipEl.addEventListener('input', function(){ digitsOnly_('f_zip',7); });
+    const zipBtn = document.getElementById('zipBtn');
+    if(zipBtn) zipBtn.addEventListener('click', function(){ zipLookupFor({zip:'f_zip',pref:'f_pref',city:'f_city',town:'f_town',hint:'zipHint',onfill:saveDraft}); });
+    restoreDraft();
+  })();
+
+  // ===== リアルタイム入力バリデーション =====
+  const VALIDATORS = {
+    f_lastName:  function(v){ return v.trim() ? '' : '姓を入力してください'; },
+    f_firstName: function(v){ return v.trim() ? '' : '名を入力してください'; },
+    f_twId:      function(v){ v=v.trim(); if(!v) return 'Twitter IDを入力してください'; if(v[0] !== '@') return '@から始めてください（例：@example）'; if(v.length < 2) return 'IDが短すぎます'; return ''; },
+    f_twName:    function(v){ return v.trim() ? '' : '表示名を入力してください'; },
+    f_zip:       function(v){ v=v.replace(/[^0-9]/g,''); if(!v) return '郵便番号を入力してください'; if(v.length !== 7) return '7桁で入力してください'; return ''; },
+    f_pref:      function(v){ return v.trim() ? '' : '都道府県を入力してください'; },
+    f_city:      function(v){ return v.trim() ? '' : '市区町村を入力してください'; },
+    f_town:      function(v){ return v.trim() ? '' : '町名・番地を入力してください'; }
+  };
+
+  function setFieldState(id, ok, msg, touched){
+    const el = document.getElementById(id);
+    if(!el) return;
+    const field = el.closest('.field') || el.parentElement;
+    if(!field) return;
+    field.classList.remove('field-ok','field-ng');
+    var hint = field.querySelector('.field-msg');
+    if(!touched){ if(hint) hint.remove(); return; }
+    if(ok){
+      field.classList.add('field-ok');
+      if(hint) hint.remove();
+    } else {
+      field.classList.add('field-ng');
+      if(!hint){ hint = document.createElement('p'); hint.className='field-msg'; field.appendChild(hint); }
+      hint.textContent = '⚠ ' + msg;
+    }
+  }
+
+  function validateField(id, touched){
+    const el = document.getElementById(id);
+    if(!el || !VALIDATORS[id]) return true;
+    const msg = VALIDATORS[id](el.value);
+    setFieldState(id, !msg, msg, touched);
+    return !msg;
+  }
+
+  function initFieldValidation(){
+    Object.keys(VALIDATORS).forEach(function(id){
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.addEventListener('blur', function(){ validateField(id, true); });
+      el.addEventListener('input', function(){
+        const field = el.closest('.field') || el.parentElement;
+        if(field && field.classList.contains('field-ng')) validateField(id, true);
+      });
+    });
+  }
+
+  function validateAllFields(){
+    var firstBad = null;
+    Object.keys(VALIDATORS).forEach(function(id){
+      const ok = validateField(id, true);
+      if(!ok && !firstBad) firstBad = id;
+    });
+    if(firstBad){
+      const el = document.getElementById(firstBad);
+      if(el && el.scrollIntoView) el.scrollIntoView({behavior:'smooth', block:'center'});
+      return false;
+    }
+    return true;
+  }
+
+  // 商品ID→product を引く
+  function productById(id){
+    var found = null;
+    (CONFIG.products||[]).forEach(function(p){ if(p.id === id) found = p; });
+    return found;
+  }
+  // その商品で現在選択中の合計数（メンバー合算）
+  function selectedQtyForProduct(id){
+    var p = productById(id), sum = 0;
+    if(!p) return 0;
+    if(p.members && p.members.length){ p.members.forEach(function(mb){ sum += state.qty[keyOf(id, mb)]||0; }); }
+    else { sum = state.qty[keyOf(id, null)]||0; }
+    return sum;
+  }
+
+  function changeQty(st, delta){
+    const id = st.dataset.id;
+    const key = keyOf(id, st.dataset.member || null);
+    const cap = st.dataset.cap ? parseInt(st.dataset.cap,10) : null;
+    const p = productById(id);
+    let v = (state.qty[key]||0) + delta;
+    if(v < 0) v = 0;
+    if(cap != null && v > cap) v = cap;
+    // 在庫上限チェック（商品単位の残数。メンバー合算がremainingを超えないように）
+    if(p && typeof p.remaining === 'number' && delta > 0){
+      const others = selectedQtyForProduct(id) - (state.qty[key]||0);  // この商品の他メンバー分
+      const allowed = Math.max(0, p.remaining - others);
+      if(v > allowed){
+        v = allowed;
+        showStockToast(p.name, p.remaining);
+      }
+    }
+    state.qty[key] = v;
+    st.querySelector('.qty').textContent = v;
+    st.querySelector('button[data-act=minus]').disabled = (v === 0);
+    // ＋ボタンの無効化：個数上限 or 在庫上限のいずれかに到達
+    var plusDisabled = false;
+    if(cap != null && v >= cap) plusDisabled = true;
+    if(p && typeof p.remaining === 'number'){
+      if(selectedQtyForProduct(id) >= p.remaining) plusDisabled = true;
+    }
+    st.querySelector('button[data-act=plus]').disabled = plusDisabled;
+    updateTotal();
+    saveDraft();
+  }
+
+  // 在庫を再取得して商品リストの残数表示を更新し、商品選択へ戻す
+  function refreshStockThenGoStep1(){
+    try {
+      callApi('getStockInfo', { eventId: EVENT_ID }).then(function(r){
+        if(r && r.ok && r.remaining){
+          (CONFIG.products||[]).forEach(function(p){
+            if(p.name in r.remaining){ p.remaining = r.remaining[p.name]; }
+          });
+          rebuildProductList();
+        }
+      }).catch(function(){});
+    } catch(e){}
+    if(!state.registered) goStep(1);
+  }
+
+  // 在庫上限に達したときの一時的な通知
+  var stockToastTimer = null;
+  function showStockToast(name, remaining){
+    var t = document.getElementById('stockToast');
+    if(!t){
+      t = document.createElement('div');
+      t.id = 'stockToast';
+      t.className = 'stock-toast';
+      document.body.appendChild(t);
+    }
+    t.textContent = '「'+name+'」は残り'+remaining+'点までです';
+    t.classList.add('show');
+    if(stockToastTimer) clearTimeout(stockToastTimer);
+    stockToastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2200);
+  }
+
+  function cartItems(){
+    const out = [];
+    CONFIG.products.forEach(function(p){
+      if(p.members && p.members.length){
+        p.members.forEach(function(mb){
+          const q = state.qty[keyOf(p.id, mb)] || 0;
+          if(q > 0) out.push({ id:p.id, member:mb, name:p.name, priceJPY:p.priceJPY, priceKRW:p.priceKRW, qty:q });
+        });
+      } else {
+        const q = state.qty[keyOf(p.id, null)] || 0;
+        if(q > 0) out.push({ id:p.id, member:null, name:p.name, priceJPY:p.priceJPY, priceKRW:p.priceKRW, qty:q });
+      }
+    });
+    return out;
+  }
+  function totalJpy(){ return cartItems().reduce(function(s,it){ return s + it.priceJPY*it.qty; }, 0); }
+  function totalKrw(){ return cartItems().reduce(function(s,it){ return s + it.priceKRW*it.qty; }, 0); }
+  function bonusQty(){ if(!BONUS.enabled || !BONUS.perKRW) return 0; return Math.floor(totalKrw() / BONUS.perKRW); }
+
+  function updateTotal(){
+    const lbl = document.getElementById('barLbl');
+    // マッチングモード：金額はマッチング確定後に決まるため、合計ではなく「選択中の枚数・最大見込み額」を表示
+    if(MATCH_MODE){
+      const est = matchingEstimate();
+      if(est){
+        document.getElementById('barTotal').textContent = est.count + '枚（最大 ' + fmtJpy(est.maxJpy) + '）';
+        if(lbl) lbl.textContent = est.isFull ? '全セット購入（確定後にお支払い）' : '選択中の枠（確保できた分をお支払い）';
+      } else {
+        document.getElementById('barTotal').textContent = '未選択';
+        if(lbl) lbl.textContent = 'メンバーを選んでください';
+      }
+      document.getElementById('barBonus').style.display = 'none';
+      if(state.step === 1) document.getElementById('ctaBtn').disabled = !hasMatchingSelection();
+      updateMiniCart();
+      return;
+    }
+    const tj = totalJpy();
+    document.getElementById('barTotal').textContent = fmtJpy(tj);
+    if(lbl) lbl.textContent = 'お支払い合計（円）';
+    const pill = document.getElementById('barBonus');
+    if(SHOW_BONUS){ pill.style.display = 'inline-block'; pill.textContent = (BONUS.label||'特典') + ' ' + bonusQty() + '個'; }
+    else { pill.style.display = 'none'; }
+    if(state.step === 1) document.getElementById('ctaBtn').disabled = (tj === 0 && !hasMatchingSelection());
+    updateMiniCart();
+  }
+
+  function updateMiniCart(){
+    const badge = document.getElementById('minicartBadge');
+    const list = document.getElementById('minicartList');
+    if(!badge || !list) return;
+    // マッチングモード：希望メンバー等の選択内容を商品ごとに一覧表示（数量カートは使わない）
+    if(MATCH_MODE){
+      const est = matchingEstimate();
+      if(!est || !est.items.length){ badge.style.display='none'; list.innerHTML = '<div style="font-size:.8rem;color:var(--muted);padding:4px 0;">メンバーが選択されていません</div>'; return; }
+      badge.style.display='inline-block'; badge.textContent = est.count+'枚';
+      var mh='';
+      est.items.forEach(function(it){
+        const m = state.matching[it.productId] || {};
+        const productLabel = est.items.length > 1 ? '【'+escapeHtml(it.productName)+'】' : '';
+        if(it.isFull){
+          mh += '<div class="minicart-item"><span class="minicart-item-name">'+productLabel+'全メンバーセット購入</span><span class="minicart-item-qty">'+it.count+'枚</span></div>';
+        } else {
+          const prefs = m.prefs || [];
+          mh += '<div class="minicart-item"><span class="minicart-item-name">'+productLabel+'希望：'+escapeHtml(prefs.map(function(x,i){return (i+1)+'.'+x;}).join(' '))+'</span></div>';
+          if(m.combine === 'yes' && m.alts && m.alts.length) mh += '<div class="minicart-item"><span class="minicart-item-name">抱き合わせ指定：'+escapeHtml(m.alts.join('、'))+'</span></div>';
+          if(m.combine === 'yes' && m.wild > 0) mh += '<div class="minicart-item"><span class="minicart-item-name">自由枠</span><span class="minicart-item-qty">'+m.wild+'枚</span></div>';
+        }
+      });
+      mh += '<div class="minicart-total"><span>最大見込み額</span><span>'+fmtJpy(est.maxJpy)+'</span></div>';
+      list.innerHTML = mh;
+      return;
+    }
+    const items = cartItems();
+    const total = items.reduce(function(s,it){return s+it.qty;},0);
+    if(total > 0){ badge.style.display='inline-block'; badge.textContent = total+'点'; }
+    else { badge.style.display='none'; }
+    if(items.length === 0){ list.innerHTML = '<div style="font-size:.8rem;color:var(--muted);padding:4px 0;">商品が選択されていません</div>'; return; }
+    var h='';
+    items.forEach(function(it){
+      var label = it.member ? it.name+' / '+it.member : it.name;
+      h += '<div class="minicart-item"><span class="minicart-item-name">'+escapeHtml(label)+'</span><span class="minicart-item-qty">×'+it.qty+'</span><span class="minicart-item-price">'+fmtJpy(it.priceJPY*it.qty)+'</span></div>';
+    });
+    h += '<div class="minicart-total"><span>合計</span><span>'+fmtJpy(totalJpy())+'</span></div>';
+    list.innerHTML = h;
+  }
+
+  (function initMiniCart(){
+    var btn = document.getElementById('barTotBtn');
+    var panel = document.getElementById('minicartPanel');
+    var closeBtn = document.getElementById('minicartClose');
+    if(btn && panel){ btn.addEventListener('click', function(){ if(state.step !== 1) return; panel.style.display = panel.style.display==='none' ? 'block' : 'none'; }); }
+    if(closeBtn && panel){ closeBtn.addEventListener('click', function(){ panel.style.display='none'; }); }
+  })();
+
+  // ④ トレカ枠マッチング結果ブロック（自分の結果＋匿名の充足状況＋補欠の再申込導線）
+  // 1商品ぶんのマッチング結果ブロックを組み立てる（商品名ラベル・複数商品時のみ表示）
+  function buildOneMatchResultBlock_(productLabel, applyType, prefsStr, altsStr, wildStr, setCountStr, mt, o){
+    var h = '';
+    var applyLabel = applyType === 'full' ? ('全メンバーセット購入 × ' + (setCountStr || '1') + 'セット')
+                   : (applyType === 'partial' ? '枠マッチング' : '');
+    if(applyLabel){
+      h += '<div class="mt-mine-line"><b>'+(productLabel?escapeHtml(productLabel)+'　':'')+'お申込み内容：</b>'+applyLabel;
+      if(applyType === 'partial'){
+        if(prefsStr) h += '｜希望：'+escapeHtml(prefsStr);
+        if(altsStr)  h += '｜代替：'+escapeHtml(altsStr);
+        if(wildStr && wildStr!=='0') h += '｜自由枠：'+escapeHtml(wildStr);
+      }
+      h += '</div>';
+    }
+
+    // マッチング自体がまだ一度も実施されていない場合のみ、この案内を出す
+    if(!mt){
+      h += '<div class="mt-pending">マッチングはまだ実施されていません。実施され次第、結果がここに表示されます。</div>';
+      return h;
+    }
+
+    // mt はあるが、この申込がまだ結果に含まれていない（実施後に申込んだ等）場合は「未確保」として扱う
+    var notYetIncluded = !mt.mine;
+    var mine = mt.mine || { status: 'waitlist', confirmed: [], missing: [] };
+    var isWaitlistLike = (mine.status !== 'confirmed' && mine.status !== 'partial');
+
+    // 自分の結果
+    if(mine.status === 'confirmed'){
+      h += '<div class="mt-status ok">✅ 枠を確保できました：<b>'+escapeHtml(mine.confirmed.join('、'))+'</b></div>';
+      h += '<div class="mt-reapply-note">下の「確保メンバー分を支払う」からお支払いにお進みください。</div>';
+    } else if(mine.status === 'partial'){
+      h += '<div class="mt-status partial">☑️ 一部の枠を確保できました：<b>'+escapeHtml(mine.confirmed.join('、'))+'</b></div>';
+      if(mine.missing && mine.missing.length)
+        h += '<div class="mt-status miss">まだ確保できていない希望・指定：<b>'+escapeHtml(mine.missing.join('、'))+'</b>（引き続きマッチング対象です）</div>';
+      if(mine.remainingWild > 0)
+        h += '<div class="mt-status miss">残っている自由枠：<b>'+mine.remainingWild+'枚</b>（引き続きマッチング対象です）</div>';
+      if(o.hasProof){
+        h += '<div class="mt-reapply-note">「'+escapeHtml(mine.confirmed.join('、'))+'」の分はお支払い済みです。残りの希望・自由枠は次回以降のマッチングでも引き続き確保を試みますので、追加で確保できた場合はこの画面に反映され、その分だけ改めてお支払いいただけます。</div>';
+      } else {
+        h += '<div class="mt-reapply-note">確保できた「'+escapeHtml(mine.confirmed.join('、'))+'」の分は、下の「確保メンバー分を支払う」から今すぐお支払いいただけます。残りの希望・自由枠は次回以降のマッチングでも引き続き確保を試みますので、追加で確保できた場合はこの画面に反映され、その分だけ追加でお支払いいただけます。</div>';
+      }
+    } else if(notYetIncluded){
+      h += '<div class="mt-status waitlist">⚠️ マッチングは実施されましたが、まだ枠を確保できていません（補欠）。</div>';
+    } else {
+      h += '<div class="mt-status waitlist">⚠️ 補欠（枠を確保できていません）。</div>';
+      if(mine.missing && mine.missing.length)
+        h += '<div class="mt-status miss">確保できなかった希望・指定：'+escapeHtml(mine.missing.join('、'))+'</div>';
+    }
+
+    // 匿名の充足状況：既に枠が確定した人（confirmed/partial）には不要なので、補欠の人にだけ表示する
+    var openMembers = [];
+    if(isWaitlistLike && mt.fill && mt.fill.members){
+      var sets = mt.fill.sets;
+      var mm = mt.fill.members;
+      // 「あと何枠必要か」は、実際にそのメンバーをまだ希望している人数（candidates）を使う。
+      // 完成グループ数だけを見ると「0セット成立＝全員あと1枠」に見えてしまい、
+      // 実際には応募が集まっているメンバーまで一律「不足」扱いになってしまうため、
+      // 候補データ（candidates）がある場合はそちらを優先して使う。
+      var cand = mt.fill.candidates;
+      var need = {};   // メンバー名 -> 実際にいま不足している人数（0なら候補あり＝ボトルネックではない）
+      if(cand){
+        Object.keys(mm).forEach(function(k){ need[k] = (cand[k] > 0) ? 0 : 1; });
+      } else {
+        // 旧データ（candidatesが無いスナップショット）向けの後方互換フォールバック
+        var nextTarget = sets + 1;
+        Object.keys(mm).forEach(function(k){ need[k] = Math.max(0, nextTarget - mm[k]); });
+      }
+      openMembers = Object.keys(need).filter(function(k){ return need[k] > 0; });
+
+      // 「充足（候補あり）」「不足（候補0人＝本当のボトルネック）」でメンバーをグループ化して提示する
+      var byNeed = {};   // need数(0=候補あり／1=候補0人) -> [メンバー,...]
+      Object.keys(need).forEach(function(k){ (byNeed[need[k]] = byNeed[need[k]] || []).push(k); });
+      var needLevels = Object.keys(byNeed).map(Number).sort(function(a,b){ return a-b; });
+
+      var nextSetNo = sets + 1;   // 今まさに応募状況を調整している（次に成立を狙う）セットの番号
+      h += '<div class="mt-fill"><b>いまの枠の状況</b>（成立 '+sets+' セット／'+nextSetNo+'セット目を調整中）<br>';
+      needLevels.forEach(function(n){
+        var names = byNeed[n];
+        if(n === 0){
+          h += '<div class="mt-fill-row mt-fill-ok">✅ '+nextSetNo+'セット目の応募あり：'+escapeHtml(names.join('、'))+'</div>';
+        } else {
+          h += '<div class="mt-fill-row mt-fill-need">🔲 '+nextSetNo+'セット目の応募がまだありません：<b>'+escapeHtml(names.join('、'))+'</b></div>';
+        }
+      });
+      h += '</div>';
+    }
+
+    // 補欠（枠を1つも確保できなかった人）だけ、希望修正の案内（ボタンは下のアクション側で表示）
+    if(isWaitlistLike && o.canChange && o.eventId === EVENT_ID){
+      var tip = openMembers.length
+        ? ('とくに <b>'+escapeHtml(openMembers.join('、'))+'</b> はまだ応募が無く、抱き合わせの「指定」や「自由枠」に加えると確保しやすくなります。')
+        : '抱き合わせの「指定」や「自由枠」を広げると確保しやすくなります。';
+      h += '<div class="mt-reapply-note">上の枠の状況を参考に希望の組み合わせを見直すと、入りやすくなる場合があります。'+tip+'下の「✏️ 希望を修正する」から変更できます。</div>';
+    }
+    return h;
+  }
+
+  function buildMatchingBlock_(o){
+    var h = '<div class="mt-result">';
+    h += '<div class="mt-result-head">🎯 トレカ枠マッチング</div>';
+    var mt = o.matching;   // {updatedAt, mine, fill, extra} または null（マッチング自体が未実施）
+    var extraReqs = o.extraMatchRequests || [];   // 2商品目以降の申込内容（複数商品に同時応募している場合）
+    var multi = extraReqs.length > 0;
+
+    // 1商品目（従来からの列＝W〜AA）ぶんを描画
+    h += buildOneMatchResultBlock_(multi ? o.applyProductName : '', o.applyType, o.prefsStr, o.altsStr, o.wildStr, o.setCountStr, mt, o);
+
+    // 2商品目以降（AB列のJSON）ぶんを、対応する結果(mt.extra)と商品IDで突き合わせて描画
+    if(multi){
+      extraReqs.forEach(function(req){
+        var extraResult = null;
+        if(mt && mt.extra){
+          extraResult = mt.extra.filter(function(e){ return e.productId === req.productId; })[0] || null;
+        }
+        // このAB列の商品に対応する結果が無い場合でも、マッチング自体が実施済みならその旨を伝える
+        var mtForThis = extraResult ? { updatedAt: mt.updatedAt, mine: extraResult.mine, fill: extraResult.fill } : (mt ? { updatedAt: mt.updatedAt, mine: null, fill: null } : null);
+        h += '<div class="mt-extra-sep"></div>';
+        h += buildOneMatchResultBlock_(req.productName, req.applyType, req.prefsStr, req.altsStr, req.wildStr, req.setCountStr, mtForThis, o);
+      });
+    }
+
+    h += '<div class="mt-updated">結果の更新：'+escapeHtml((mt && mt.updatedAt) ? mt.updatedAt.replace('T',' ').slice(0,16) : '-')+'</div>';
+
+    // 補欠のまま残っている商品がある場合は、その場で「今の枠の状況」を確認できるボタンを出す
+    // （マッチング結果のスナップショットではなく、現時点の最新の申込状況を見られる）
+    if(o.matchConfirm && o.matchConfirm.hasWaitlisted && o.canChange){
+      h += '<button type="button" class="ghost-btn" style="margin-top:10px" data-act="livestatus" data-oid="'+escapeHtml(o.orderId)+'" data-eventid="'+escapeHtml(o.eventId)+'">🔍 いまの枠の状況を見る</button>';
+      h += '<div id="livestatus-'+escapeHtml(o.orderId)+'"></div>';
+    }
+    h += '</div>';
+    return h;
+  }
+
+  // ③ お届けスケジュールタイムライン（購入履歴）
+  function buildTimeline_(o){
+    var steps = [
+      { label:'申込完了',   sub:'お申し込みを受け付けました',           done: true },
+      { label:'1次入金',    sub:'商品代金のお支払い確認',               done: !!o.hasProof },
+      { label:'現地手配中',  sub:'海外で商品を手配しています',           done: !!(o.hasProof && (o.secondPaid || o.secondPayable || o.secondPayPending || o.shipStage)) },
+      { label:'2次入金',    sub:'送料のお支払い',                       done: !!(o.secondPaid || o.shipStage === 'packing' || o.shipStage === 'shipped') },
+      { label:'梱包・発送',  sub:'梱包して発送します',                   done: !!(o.shipStage === 'packing' || o.shipStage === 'shipped') },
+      { label:'お届け',     sub:'発送済み・配送中',                     done: o.shipStage === 'shipped' }
+    ];
+    var activeIdx = 0;
+    steps.forEach(function(s,i){ if(s.done) activeIdx = i; });
+    var allDone = steps[steps.length-1].done;   // 最終ステップ（お届け）まで完了
+    var h = '<div class="lk-timeline"><p class="tl-title">📦 お届けまでの進捗</p><div class="tl-steps">';
+    steps.forEach(function(s,i){
+      var cls;
+      if(allDone){ cls = i === steps.length-1 ? 'is-done is-complete' : 'is-done'; }
+      else { cls = s.done ? (i===activeIdx ? 'is-active' : 'is-done') : 'is-pending'; }
+      var isActive = !allDone && s.done && i===activeIdx;
+      var mark = s.done ? '✓' : '';
+      h += '<div class="tl-step '+cls+'">';
+      h +=   '<div class="tl-dot">'+mark+'</div>';
+      h +=   '<div class="tl-body"><div class="tl-label">'+s.label+(isActive?'（現在）':'')+(allDone&&i===steps.length-1?'🎉':'')+'</div><div class="tl-sub">'+s.sub+'</div></div>';
+      h += '</div>';
+    });
+    h += '</div></div>';
+    return h;
+  }
+
+  // ---- ステップ移動 ----
+  function goStep(n){
+    state.step = n;
+    for(let i=1;i<=5;i++){ document.getElementById('panel'+i).classList.toggle('active', i===n); }
+    const sp = document.getElementById('steps').children;
+    for(let i=0;i<4;i++){ sp[i].className = (i < n-1) ? 'done' : (i === n-1 ? 'now' : ''); }
+    const bar = document.getElementById('bar'), cta = document.getElementById('ctaBtn');
+    if(n === 5){ bar.style.display = 'none'; return; }
+    bar.style.display = 'block';
+    if(n === 1){ cta.textContent = state.edit ? '変更を確定する' : 'お届け先へ'; cta.disabled = MATCH_MODE ? !hasMatchingSelection() : totalJpy()===0; }
+    if(n === 2){ cta.textContent = '内容を確認'; cta.disabled = false; }
+    if(n === 3){
+      cta.textContent = state.registered ? 'お支払いへ' : (MATCH_MODE ? '申し込む' : '登録してお支払い先を表示');
+      cta.disabled = state.registered ? false : !document.getElementById('agree').checked;
+      const bk = document.getElementById('back3'); if(bk) bk.style.display = state.registered ? 'none' : '';
+    }
+    if(n === 4){ cta.textContent = '支払い証明を送信'; cta.disabled = false; }
+    scrollTop();
+  }
+  document.querySelectorAll('.back').forEach(function(b){
+    b.addEventListener('click', function(){ if(b.dataset.back) goStep(Number(b.dataset.back)); });
+  });
+
+  // ---- 確認サマリー（注文＋お客様情報。支払い先はまだ出さない）----
+  function buildSummary(){
+    let html = '';
+    if(!MATCH_MODE){
+      cartItems().forEach(function(it){
+        const label = it.member ? escapeHtml(it.name)+' / '+escapeHtml(it.member) : escapeHtml(it.name);
+        html += '<div class="row"><span class="nm">'+label+' × '+it.qty+'</span>' +
+                '<span class="amt">'+fmtJpy(it.priceJPY*it.qty)+'</span></div>';
+      });
+      html += '<div class="row total"><span class="nm">合計</span><span class="amt">'+fmtJpy(totalJpy())+'</span></div>';
+      if(SHOW_BONUS){
+        html += '<div class="row bonus-row"><span class="nm">'+(BONUS.label||'特典')+'</span><span class="amt">'+bonusQty()+'個</span></div>';
+      }
+    }
+    // トレカ枠マッチングの申込内容を要約表示（設定ミス防止）
+    if(MATCH_MODE){
+      const est = matchingEstimate();
+      if(est && est.items.length){
+        html += '<div class="row match-summary-row"><span class="nm">🎯 枠マッチング申込</span></div>';
+        est.items.forEach(function(it){
+          const m = state.matching[it.productId] || {};
+          const productLabel = est.items.length > 1 ? '【'+escapeHtml(it.productName)+'】' : '';
+          let mtxt;
+          if(it.isFull){
+            mtxt = productLabel + '全メンバーセット購入 × ' + (it.setCount||1) + 'セット';
+          } else {
+            const prefs = m.prefs || [];
+            mtxt = productLabel + '希望：' + (prefs.length ? prefs.map(function(x,i){return (i+1)+'.'+x;}).join(' ') : '（なし）');
+            const alts = (m.combine === 'yes') ? (m.alts||[]) : [];
+            const wild = (m.combine === 'yes') ? (m.wild||0) : 0;
+            if(alts.length) mtxt += '｜抱き合わせ指定：' + alts.join('、');
+            if(wild > 0) mtxt += '｜自由枠：' + wild + '枚';
+            if(!alts.length && !wild) mtxt += '｜抱き合わせ：無し';
+          }
+          html += '<div class="match-summary-detail">'+escapeHtml(mtxt)+'</div>';
+        });
+        html += '<div class="row total"><span class="nm">最大見込み額（'+est.count+'枚）</span><span class="amt">'+fmtJpy(est.maxJpy)+'</span></div>';
+        html += '<div class="match-summary-note">※実際のお支払いは、マッチングで確保できた枚数分のみです。金額はマッチング後に確定します。</div>';
+      }
+    }
+    document.getElementById('orderSummary').innerHTML = html;
+    document.getElementById('custSummary').innerHTML =
+      '<dt>お名前</dt><dd>'+escapeHtml(val('f_lastName')+' '+val('f_firstName'))+'</dd>' +
+      '<dt>Twitter ID</dt><dd>'+escapeHtml(val('f_twId'))+'</dd>' +
+      '<dt>Twitterユーザー名</dt><dd>'+escapeHtml(val('f_twName'))+'</dd>' +
+      '<dt>お届け先</dt><dd>'+escapeHtml(composeAddress())+'</dd>' +
+      (val('f_note') ? '<dt>備考</dt><dd>'+escapeHtml(val('f_note'))+'</dd>' : '');
+  }
+
+  // 申込内容の控え（お支払い画面に表示。本人がスクショ／コピーで保存できる）
+  let copyText = '';
+  function buildReceipt(){
+    const items = cartItems();
+    let html = '<div class="rc-title">申込内容（控え）</div>';
+    html += '<div class="rc-row"><span>受付番号</span><b>'+escapeHtml(state.orderId)+'</b></div>';
+    let txt = '【申込内容の控え】\n受付番号：'+state.orderId+'\n\n';
+    items.forEach(function(it){
+      const label = it.member ? it.name+' / '+it.member : it.name;
+      html += '<div class="rc-row"><span>'+escapeHtml(label)+' × '+it.qty+'</span><b>'+fmtJpy(it.priceJPY*it.qty)+'</b></div>';
+      txt += '・'+label+' × '+it.qty+'（'+fmtJpy(it.priceJPY*it.qty)+'）\n';
+    });
+    html += '<div class="rc-row total"><span>合計</span><b>'+fmtJpy(totalJpy())+'</b></div>';
+    txt += '合計：'+fmtJpy(totalJpy())+'\n';
+    if(SHOW_BONUS){
+      html += '<div class="rc-row"><span>'+(BONUS.label||'特典')+'</span><b>'+bonusQty()+'個</b></div>';
+      txt += (BONUS.label||'特典')+'：'+bonusQty()+'個\n';
+    }
+    const nm = (val('f_lastName')+' '+val('f_firstName')).trim();
+    html += '<div class="rc-cust"><div>お名前：'+escapeHtml(nm)+'</div>'
+          + '<div>Twitter ID：'+escapeHtml(val('f_twId'))+'</div>'
+          + (val('f_twName') ? '<div>Twitterユーザー名：'+escapeHtml(val('f_twName'))+'</div>' : '')
+          + '<div>お届け先：'+escapeHtml(composeAddress())+'</div>'
+          + (val('f_note') ? '<div>備考：'+escapeHtml(val('f_note'))+'</div>' : '')
+          + '</div>';
+    txt += '\nお名前：'+nm+'\nTwitter ID：'+val('f_twId')+'\n';
+    if(val('f_twName')) txt += 'Twitterユーザー名：'+val('f_twName')+'\n';
+    txt += 'お届け先：'+composeAddress()+'\n';
+    if(val('f_note')) txt += '備考：'+val('f_note')+'\n';
+    document.getElementById('orderReceipt').innerHTML = html;
+    copyText = txt;
+  }
+  document.getElementById('copyBtn').addEventListener('click', function(){
+    const btn = this;
+    function done(){ btn.textContent = 'コピーしました ✓'; setTimeout(function(){ btn.textContent = 'この内容をコピー'; }, 2000); }
+    function fallback(){
+      const ta = document.createElement('textarea');
+      ta.value = copyText; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      try { document.execCommand('copy'); done(); }
+      catch(e){ alert('コピーできませんでした。お手数ですがスクリーンショットで保存してください。'); }
+      document.body.removeChild(ta);
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(copyText).then(done).catch(fallback);
+    } else { fallback(); }
+  });
+
+  function nowStr(){ const d=new Date(); const p=function(n){return(n<10?'0':'')+n;}; return d.getFullYear()+'/'+p(d.getMonth()+1)+'/'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes()); }
+  function saveReceiptImage(){
+    try{
+      const items = cartItems();
+      const rows = [['header','申込内容の控え'], ['big', state.orderId || '']];
+      if(CONFIG.title) rows.push(['kv','イベント', CONFIG.title]);
+      rows.push(['kv','申込日時', nowStr()], ['sep']);
+      items.forEach(function(it){ rows.push(['item', (it.member?it.name+' / '+it.member:it.name)+'  ×'+it.qty, fmtJpy(it.priceJPY*it.qty)]); });
+      rows.push(['total','合計', fmtJpy(totalJpy())]);
+      if(SHOW_BONUS) rows.push(['kv', (BONUS.label||'特典'), bonusQty()+'個']);
+      rows.push(['sep']);
+      const nm=(val('f_lastName')+' '+val('f_firstName')).trim();
+      if(nm) rows.push(['kv','お名前', nm]);
+      if(val('f_twId')) rows.push(['kv','Twitter ID', val('f_twId')]);
+
+      const W=680, padX=28, dpr=Math.max(1, window.devicePixelRatio||1);
+      const HOF={header:78,big:66,kv:32,item:30,total:48,sep:16};
+      let h=24; rows.forEach(function(r){ h+=HOF[r[0]]; }); h+=20;
+      const cv=document.createElement('canvas'); cv.width=W*dpr; cv.height=h*dpr;
+      const ctx=cv.getContext('2d'); ctx.scale(dpr,dpr);
+      ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,W,h);
+      let y=24;
+      rows.forEach(function(r){
+        if(r[0]==='header'){
+          ctx.fillStyle='#11161a'; ctx.textAlign='left'; ctx.font='700 22px sans-serif'; ctx.fillText(r[1], padX, y+28);
+          ctx.fillStyle='#1f6feb'; ctx.fillRect(padX, y+44, W-padX*2, 3); y+=HOF.header;
+        } else if(r[0]==='big'){
+          ctx.fillStyle='#6b7780'; ctx.textAlign='left'; ctx.font='12px sans-serif'; ctx.fillText('受付番号', padX, y+10);
+          ctx.fillStyle='#1f6feb'; ctx.font='700 30px sans-serif'; ctx.fillText(r[1], padX, y+44); y+=HOF.big;
+        } else if(r[0]==='sep'){
+          ctx.strokeStyle='#e6e9ec'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(padX,y+4); ctx.lineTo(W-padX,y+4); ctx.stroke(); y+=HOF.sep;
+        } else {
+          const bold = r[0]==='total';
+          ctx.fillStyle = bold?'#11161a':'#3a444c'; ctx.textAlign='left'; ctx.font=(bold?'700 18px ':'14px ')+'sans-serif';
+          ctx.fillText(r[1], padX, y+(bold?26:20));
+          ctx.fillStyle='#11161a'; ctx.textAlign='right'; ctx.font=(bold?'700 18px ':'14px ')+'sans-serif';
+          ctx.fillText(r[2]||'', W-padX, y+(bold?26:20));
+          y+=HOF[r[0]];
+        }
+      });
+      const url=cv.toDataURL('image/png');
+      const a=document.createElement('a'); a.href=url; a.download='受付番号_'+(state.orderId||'order')+'.png';
+      document.body.appendChild(a); a.click(); a.remove();
+    }catch(e){ alert('画像の保存に失敗しました。お手数ですがスクリーンショットで控えてください。'); }
+  }
+  document.getElementById('saveImgBtn').addEventListener('click', saveReceiptImage);
+
+  // ---- ファイル選択 ----
+  document.getElementById('f_shot').addEventListener('change', function(e){
+    const file = e.target.files[0];
+    if(!file) return;
+    if(!file.type || file.type.indexOf('image/') !== 0){ showErr('err4','画像ファイルのみ添付できます（JPEG・PNG など）。'); e.target.value=''; return; }
+    if(file.size > 5*1024*1024){ showErr('err4','ファイルサイズが5MBを超えています。圧縮するか別の画像を選んでください。'); e.target.value=''; return; }
+    hideErr('err4');
+    const reader = new FileReader();
+    reader.onload = function(){
+      const dataUrl = reader.result;
+      state.shot = { data: dataUrl.split(',')[1], mimeType: file.type, fileName: file.name };
+      document.getElementById('uploadLabel').classList.add('filled');
+      document.getElementById('uploadTxt').textContent = '別の画像に変更する';
+      document.getElementById('preview').innerHTML = '<img src="'+dataUrl+'" alt="プレビュー"><div class="fn">'+escapeHtml(file.name)+'</div>';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // ---- CTA ----
+  document.getElementById('ctaBtn').addEventListener('click', function(){
+    if(state.step === 1){
+      if(state.edit){ submitEditFlow(); return; }
+      if(totalJpy() === 0 && !hasMatchingSelection()) return;
+      goStep(2);
+    } else if(state.step === 2){
+      if(!validateAllFields()){ showErr('err2','入力内容にエラーがあります。⚠ マークの項目をご確認ください。'); return; }
+      hideErr('err2'); buildSummary(); goStep(3);
+    } else if(state.step === 3){
+      if(state.registered){ goStep(4); return; }
+      if(!document.getElementById('agree').checked){ showErr('err3','ご参加には内容への同意が必要です。'); return; }
+      register();
+    } else if(state.step === 4){
+      sendProof();
+    }
+  });
+
+  // ---- STEP A：登録 ----
+  function register(){
+    if(state.sending) return; state.sending = true;
+    const cta = document.getElementById('ctaBtn'); cta.disabled = true; cta.textContent = '登録中…';
+    const ctaLabel = MATCH_MODE ? '申し込む' : '登録してお支払い先を表示';   // エラー時の復帰用ラベル
+    const payload = {
+      eventId: EVENT_ID, agreed: true,
+      lastName: val('f_lastName'), firstName: val('f_firstName'),
+      twitterId: val('f_twId'), twitterName: val('f_twName'),
+      address: composeAddress(), note: val('f_note'), test: TEST,
+      items: cartItems().map(function(it){ return { id:it.id, member:it.member, qty:it.qty }; }),
+      matching: buildMatchingPayloadArray(),
+    };
+    callApi('registerOrder', payload)
+      .then(function(res){
+        state.sending = false;
+        if(res && res.ok){
+          state.orderId = res.orderId; state.registered = true; state.payKind = '';
+          state.isFullSetMatch = !!res.allFullSet;
+          clearDraft();
+          // マッチングモード：全て「全メンバーセット購入」のみの申込は、希望枠の競争が無く必ず確保できるため、
+          // マッチング実施を待たずにそのまま通常の支払い画面へ進む。部分マッチング（希望枠）が混ざっている
+          // 場合は、これまでどおりマッチング確定まで待つ申込完了画面を出す。
+          if(MATCH_MODE && !res.allFullSet){
+            showDone({ title:'お申し込みを受け付けました', lbl:'受付番号', id:res.orderId,
+              msg:'枠マッチングのお申し込みを受け付けました。<br>マッチングは<b>日に数回</b>実施し、<b>枠を確保できた方にはDMグループにてご連絡</b>いたします。<br>確保できた場合は「受付番号で購入内容を確認する」からお支払いをお願いいたします。' });
+            showTwitterGroupInvite('お申し込みが完了しました。マッチング結果などの今後のご案内はこちらのグループで行いますので、今すぐご参加ください。');
+            return;
+          }
+          document.getElementById('payOid').textContent = res.orderId;
+          showQR(res.orderId, 'payQrCanvas', 'payQrWrap', 150);
+          document.getElementById('payInfo').textContent = res.paymentInfo || '';
+          document.getElementById('payAmount').textContent = fmtJpy(res.totalJpy);
+          document.getElementById('payRef').textContent = SHOW_BONUS
+            ? '（'+(BONUS.label||'特典')+' '+res.bonusQty+'個 対象）'
+            : '';
+          document.getElementById('paySched').style.display = 'none';
+          document.getElementById('payWarn').style.display = MATCH_MODE ? 'none' : 'block';
+          // マッチングモードの注文は自動キャンセルの対象外（サーバー側でも除外している）なので、
+          // 誤解を招くカウントダウン表示は出さない
+          if(!MATCH_MODE) startPayCountdown(res.autoCancelAt);
+          goStep(4);
+        } else if(res && res.duplicate){
+          showDuplicateNotice(res.error || 'このイベントには、すでに同じお名前でのお申し込みがあります。');
+          cta.disabled=false; cta.textContent=ctaLabel;
+        } else if(res && res.stockError){
+          var lines = (res.errors||[]).map(function(e){ return '・'+e.name+'（ご希望 '+e.requested+'点／在庫 '+e.remaining+'点）'; }).join('<br>');
+          showErr('err3', (res.error||'在庫が不足しています。')+'<br><br>'+lines+'<br><br>お手数ですが商品選択にもどって数量をご調整ください。');
+          refreshStockThenGoStep1();
+          cta.disabled=false; cta.textContent=ctaLabel;
+        } else {
+          showErr('err3','登録に失敗しました：'+(res && res.error ? res.error : '不明なエラー'));
+          cta.disabled=false; cta.textContent=ctaLabel;
+        }
+      })
+      .catch(function(err){
+        state.sending = false;
+        showErr('err3','登録に失敗しました：'+err.message);
+        cta.disabled=false; cta.textContent=ctaLabel;
+      });
+  }
+
+  function showDuplicateNotice(msg){
+    const e = document.getElementById('err3');
+    e.innerHTML = escapeHtml(msg) +
+      '<button type="button" id="dupLookupBtn" class="dup-btn">🔍 受付番号で購入内容を確認する</button>';
+    e.classList.add('show');
+    const b = document.getElementById('dupLookupBtn');
+    if(b) b.addEventListener('click', showLookupMode);
+    scrollTop();
+  }
+
+  // ---- STEP B：支払い証明の送信 ----
+  function sendProof(){
+    if(!state.shot){ showErr('err4','お支払い証明のスクリーンショットを添付してください。'); return; }
+    if(state.sending) return; state.sending = true;
+    hideErr('err4');
+    const cta = document.getElementById('ctaBtn'); cta.disabled = true; cta.textContent = '送信中…';
+    callApi('attachProof', { orderId: state.orderId, screenshot: state.shot, kind: (state.payKind || '') })
+      .then(function(res){
+        state.sending = false;
+        if(res && res.ok){
+          if(state.payKind === 'second'){
+            showAddressConfirm();
+          } else if(state.editPay){
+            const d = state.payDone || { title:'お支払いを受け付けました', msg:'お支払い証明を受け付けました。<br>確認後、順次対応いたします。' };
+            showDone({ title:d.title, lbl:'受付番号', id: state.orderId, msg:d.msg });
+          } else {
+            document.getElementById('doneId').textContent = state.orderId; buildReceipt(); document.getElementById('receiptWrap').style.display = 'block'; showQR(state.orderId); goStep(5);
+            if(!MATCH_MODE || state.isFullSetMatch) showTwitterGroupInvite('お支払い証明の送信が完了しました。今後のご案内はこちらのグループで行いますので、今すぐご参加ください。');
+          }
+        }
+        else if(res && res.stockError){
+          var lines = (res.errors||[]).map(function(e){ return '・'+e.name+'（残り'+e.remaining+'点）'; }).join('<br>');
+          showErr('err4', (res.error||'在庫切れです。')+'<br><br>'+lines+'<br><br>「最初にもどる」→「受付番号で購入内容を確認する」から数量を変更してください。');
+          cta.disabled=false; cta.textContent='支払い証明を送信';
+        }
+        else { showErr('err4','送信に失敗しました：'+(res && res.error ? res.error : '不明なエラー')); cta.disabled=false; cta.textContent='支払い証明を送信'; }
+      })
+      .catch(function(err){
+        state.sending = false;
+        showErr('err4','送信に失敗しました：'+err.message+'（時間をおいて再度お試しください）');
+        cta.disabled=false; cta.textContent='支払い証明を送信';
+      });
+  }
+
+  // ---- 受付番号でスクショだけ送るモード（ページが消えた後の後追い用）----
+  document.getElementById('f_shot2').addEventListener('change', function(e){
+    const file = e.target.files[0];
+    if(!file) return;
+    if(!file.type || file.type.indexOf('image/') !== 0){ showErr('err6','画像ファイルのみ添付できます（JPEG・PNG など）。'); e.target.value=''; return; }
+    if(file.size > 5*1024*1024){ showErr('err6','ファイルサイズが5MBを超えています。圧縮するか別の画像を選んでください。'); e.target.value=''; return; }
+    hideErr('err6');
+    const reader = new FileReader();
+    reader.onload = function(){
+      const dataUrl = reader.result;
+      state.shot2 = { data: dataUrl.split(',')[1], mimeType: file.type, fileName: file.name };
+      document.getElementById('uploadLabel2').classList.add('filled');
+      document.getElementById('uploadTxt2').textContent = '別の画像に変更する';
+      document.getElementById('preview2').innerHTML = '<img src="'+dataUrl+'" alt="プレビュー"><div class="fn">'+escapeHtml(file.name)+'</div>';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  function showProofMode(){
+    document.getElementById('steps').style.display = 'none';
+    document.getElementById('bar').style.display = 'none';
+    for(let i=1;i<=5;i++){ document.getElementById('panel'+i).classList.remove('active'); }
+    document.getElementById('panel7').classList.remove('active');
+    document.getElementById('panel6').classList.add('active');
+    if(state.orderId) document.getElementById('f_oid').value = state.orderId;
+    document.getElementById('f_proofLn').value = '';
+    document.getElementById('f_proofFn').value = '';
+    // 送信ボタンの状態を初期化（通信中に離脱した場合のロック解除）
+    state.sending = false;
+    const sb = document.getElementById('sendProofBtn');
+    if(sb){ sb.disabled = false; sb.textContent = '支払い証明を送信'; }
+    startProofCountdown(null);
+    hideErr('err6'); scrollTop();
+  }
+  document.getElementById('goProof').addEventListener('click', showProofMode);
+  document.getElementById('backProof').addEventListener('click', function(){ goHome(); });
+
+  function sendProofStandalone(){
+    const oid = val('f_oid').trim();
+    const ln = val('f_proofLn').trim(), fn = val('f_proofFn').trim();
+    if(!oid){ showErr('err6','受付番号を入力してください。'); return; }
+    if(!ln || !fn){ showErr('err6','お名前（姓・名）を入力してください。受付番号とお名前が一致した場合のみ送信できます。'); return; }
+    if(!state.shot2){ showErr('err6','お支払い証明のスクリーンショットを添付してください。'); return; }
+    if(state.sending) return; state.sending = true;
+    hideErr('err6');
+    const btn = document.getElementById('sendProofBtn'); btn.disabled = true; btn.textContent = '送信中…';
+    callApi('attachProof', { orderId: oid, screenshot: state.shot2, lastName: ln, firstName: fn })
+      .then(function(res){
+        state.sending = false;
+        if(res && res.ok){
+          document.getElementById('panel6').classList.remove('active');
+          document.getElementById('doneId').textContent = oid;
+          document.getElementById('receiptWrap').style.display = 'none';
+          for(let i=1;i<=5;i++){ document.getElementById('panel'+i).classList.toggle('active', i===5); }
+          scrollTop();
+        } else if(res && res.stockError){
+          var lines = (res.errors||[]).map(function(e){ return '・'+e.name+'（残り'+e.remaining+'点）'; }).join('<br>');
+          showErr('err6', (res.error||'在庫切れです。')+'<br><br>'+lines+'<br><br>「購入内容の確認」から数量を変更してから、再度お支払い証明をお送りください。');
+          btn.disabled=false; btn.textContent='支払い証明を送信';
+        } else {
+          showErr('err6','送信に失敗しました：'+(res && res.error ? res.error : '受付番号をご確認ください'));
+          btn.disabled=false; btn.textContent='支払い証明を送信';
+        }
+      })
+      .catch(function(err){
+        state.sending = false;
+        showErr('err6','送信に失敗しました：'+err.message+'（時間をおいて再度お試しください）');
+        btn.disabled=false; btn.textContent='支払い証明を送信';
+      });
+  }
+  document.getElementById('sendProofBtn').addEventListener('click', sendProofStandalone);
+  ['f_oid','f_proofLn','f_proofFn'].forEach(function(id){
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('blur', loadProofCountdown);
+  });
+
+  // ---- 受付番号で購入内容を確認するモード ----
+  function showLookupMode(){
+    document.getElementById('steps').style.display = 'none';
+    document.getElementById('bar').style.display = 'none';
+    for(let i=1;i<=5;i++){ document.getElementById('panel'+i).classList.remove('active'); }
+    document.getElementById('panel6').classList.remove('active');
+    document.getElementById('panel7').classList.add('active');
+    document.getElementById('lookupResult').innerHTML = '';
+    // 照会ボタンの状態を必ず初期化（通信中に離脱した場合のロック解除）
+    const lb = document.getElementById('lookupBtn');
+    if(lb){ lb.disabled = false; lb.textContent = '確認する'; }
+    // 前回の入力をクリア（QR/URLからの自動入力時はこの後で上書きされる）
+    ['f_lookup','f_lookLast','f_lookFirst'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
+    const an = document.getElementById('lookupAutoNote'); if(an) an.style.display='none';
+    hideErr('err7'); scrollTop();
+  }
+  document.getElementById('goLookup').addEventListener('click', showLookupMode);
+  document.getElementById('backLookup').addEventListener('click', function(){ goHome(); });
+  (function(){ const hb=document.getElementById('homeBtn'); if(hb) hb.addEventListener('click', function(){ goHome(); }); })();
+
+  function doLookup(){
+    const oid = val('f_lookup').trim();
+    const ln = val('f_lookLast').trim();
+    const fn = val('f_lookFirst').trim();
+    if(!oid){ showErr('err7','受付番号を入力してください。'); return; }
+    if(!ln || !fn){ showErr('err7','姓と名を入力してください。'); return; }
+    hideErr('err7');
+    const btn = document.getElementById('lookupBtn'); btn.disabled = true; btn.textContent = '確認中…';
+    document.getElementById('lookupResult').innerHTML = '';
+    callApi('lookupOrders', { orderId: oid, lastName: ln, firstName: fn })
+      .then(function(res){ renderLookup(res); btn.disabled=false; btn.textContent='確認する'; })
+      .catch(function(err){ showErr('err7','確認に失敗しました：'+err.message+'（時間をおいて再度お試しください）'); btn.disabled=false; btn.textContent='確認する'; });
+  }
+  document.getElementById('lookupBtn').addEventListener('click', doLookup);
+  ['f_lookup','f_lookLast','f_lookFirst'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); doLookup(); } });
+  });
+
+  function renderLookup(res){
+    const box = document.getElementById('lookupResult');
+    if(!res || !res.ok){ box.innerHTML=''; showErr('err7', (res && res.error) || '確認できませんでした。'); return; }
+    hideErr('err7');
+    const groups = {}, order = [];
+    res.orders.forEach(function(o){ const ev=o.eventTitle||'(イベント未設定)'; if(!groups[ev]){ groups[ev]=[]; order.push(ev); } groups[ev].push(o); });
+    let html = '<div class="lk-head">ご購入履歴</div>';
+    html += '<div class="lk-guide">'
+      + '<b>内容の修正（変更）について</b>'
+      + '<ul>'
+      + '<li>修正は、お支払い（証明の提出）後・<b>受付締切の1時間前まで</b>、各注文の「✏️ 修正する」から行えます（募集を早めに締め切った場合は、その時点で受付終了）。</li>'
+      + '<li>金額が<b>増える変更</b>は、差額の<b>追加お振込みとスクショのご提出</b>が必要です。期限までにご入金・ご提出がない場合は変更は無効となり、元のお申込み内容として扱います。</li>'
+      + '<li>初回のお申込み金額を<b>下回る変更はできません</b>。キャンセルは「🗑 キャンセル」から（手数料が差し引かれます）。</li>'
+      + '<li>別の回（イベント）の注文は、その回のフォームからご確認・修正ください。</li>'
+      + '</ul></div>';
+    order.forEach(function(ev){
+      html += '<div class="lk-event">'+escapeHtml(ev)+'</div>';
+      groups[ev].forEach(function(o){
+        const cancelled = (o.status === 'キャンセル');
+        // マッチングモードの注文は、マッチング結果に応じて状態を出し分ける
+        const mm = (o.matchMode && o.matchConfirm) ? o.matchConfirm : null;
+        const mmConfirmed = mm && mm.done && (mm.status === 'confirmed' || mm.status === 'partial');
+        const mmWaitlist  = mm && mm.done && (mm.status === 'waitlist' || mm.status === 'none');
+        const mmPending   = o.matchMode && (!mm || !mm.done);   // マッチング未実施
+        let badge;
+        if(cancelled) badge = '<span class="lk-badge b-cancel">キャンセル済み</span>';
+        else if(o.matchMode && mmPending) badge = '<span class="lk-badge b-topup">マッチング待ち</span>';
+        else if(o.matchMode && mmWaitlist && !o.hasProof) badge = '<span class="lk-badge b-unpaid">補欠（枠を確保できていません）</span>';
+        else if(o.matchMode && mmConfirmed && !o.hasProof) badge = '<span class="lk-badge b-unpaid">枠確保・お支払いへ</span>';
+        else if(o.pendingTopup > 0) badge = '<span class="lk-badge b-topup">追加入金が必要</span>';
+        else if(o.hasProof) badge = '<span class="lk-badge b-paid">お支払い済み（証明提出済み）</span>';
+        else badge = '<span class="lk-badge b-unpaid">未入金</span>';
+
+        html += '<div class="lk-order">';
+        html += badge;
+        html += '<div class="lk-meta">注文ID：<b class="lk-oid">'+escapeHtml(o.orderId)+'</b></div>';
+        html += '<div class="lk-qr-wrap"><div class="lk-qr-canvas" id="lkqr_'+escapeHtml(o.orderId)+'"></div><span class="lk-qr-note">このQRを保存しておくと、次回カメラで読み取るだけでこの注文の確認ページが開きます（タップで拡大）。</span></div>';
+        html += '<div class="lk-meta">送信日時：'+escapeHtml(o.date)+'</div>';
+        html += '<div class="lk-meta">Twitter ID：'+escapeHtml(o.twitterId||'-')+'</div>';
+        if(!o.matchMode){
+          o.items.forEach(function(it){
+            const label = it.member ? escapeHtml(it.name)+' / '+escapeHtml(it.member) : escapeHtml(it.name);
+            html += '<div class="lk-item"><span>'+label+' × '+it.qty+'</span><span>'+fmtJpy(it.unitJpy)+'</span></div>';
+          });
+          html += '<div class="lk-sum">合計：'+fmtJpy(o.totalJpy)+'　／　特典数：'+o.bonusQty+'個</div>';
+        }
+        // マッチングモードの明細・合計は buildMatchingBlock_ 側で状態に応じて表示
+
+        if(cancelled){ /* 表示なし */ }
+        else if(o.matchMode){
+          // マッチングモード：確保できた人だけに支払い金額を表示（未実施・補欠は出さない）
+          if(mmConfirmed && !o.hasProof && !mm.payExpired){
+            html += '<div class="lk-due red">お支払い（確保メンバー '+mm.members.length+'枚分）：'+fmtJpy(mm.amount)+'</div>';
+          } else if(mmConfirmed && !o.hasProof && mm.payExpired){
+            html += '<div class="lk-due red">お支払い期限（イベント締切）を過ぎています。お手数ですがDMにてご連絡ください。</div>';
+          }
+        }
+        else if(o.pendingTopup > 0) html += '<div class="lk-due">追加でお支払いが必要：'+fmtJpy(o.pendingTopup)+'</div>';
+        else if(!o.hasProof) html += '<div class="lk-due red">お支払い（未入金）：'+fmtJpy(o.totalJpy)+'</div>';
+        else if(o.secondPayable){
+          html += '<div class="lk-due">2次入金（送料）のお支払い：'+fmtJpy(o.secondPayDue)+'</div>';
+          html += '<div class="lk-due-detail">内訳：国際送料'+fmtJpy(o.secondPayIntl)+'＋'+escapeHtml(o.secondPayDomesticLabel||'国内送料')+fmtJpy(o.secondPayDomestic)+'</div>';
+          if(o.secondPayDeadline) html += '<div class="lk-due-detail">支払い期限：<b>'+escapeHtml(o.secondPayDeadline)+'</b> まで</div>';
+        }
+        else if(o.secondPayPending) html += '<div class="lk-stage pending2">⏳ 2次入金（送料）の金額を確定中です。確定次第このページに金額が表示されます。</div>';
+        else if(o.secondClosed) html += '<div class="lk-due red">2次入金（送料）のお支払い期間は終了しました。お手数ですがDMにてご連絡ください。</div>';
+        if(!cancelled){
+          if(o.shipStage === 'shipped'){
+            html += '<div class="lk-stage shipped">🚚 発送済み'+(o.tracking ? '　追跡番号：<b>'+escapeHtml(o.tracking)+'</b>' : '')+'</div>';
+            if(CONFIG.unboxNote) html += '<div class="unbox-note" style="margin:8px 0 0">'+escapeHtml(CONFIG.unboxNote)+'</div>';
+          } else if(o.shipStage === 'packing'){
+            html += '<div class="lk-stage packing">📦 梱包中</div>';
+          } else if(o.shipStage === 'second_paid' || o.secondPaid){
+            html += '<div class="lk-stage paid2">✅ 2次入金（送料）お支払い済み</div>';
+          }
+          html += buildTimeline_(o);
+        }
+        if(!cancelled && o.matchMode){ html += buildMatchingBlock_(o); }
+
+        let acts = '';
+        if(o.matchMode){
+          // マッチングモード：確保できた人にだけ支払いボタン（支払い期限内のみ）。補欠は希望修正（未確定・締切前のみ）
+          if(!cancelled && mmConfirmed && !o.hasProof && !mm.payExpired){
+            acts += '<button class="lk-pay" data-act="paymatch" data-oid="'+escapeHtml(o.orderId)+'">確保メンバー分を支払う</button>';
+          }
+          if(!cancelled && o.hasProof && o.secondPayable){
+            acts += '<button class="lk-pay" data-act="pay" data-oid="'+escapeHtml(o.orderId)+'">2次入金（送料）を支払う</button>';
+          }
+          if(!cancelled && mm && mm.hasWaitlisted && o.canChange && o.eventId === EVENT_ID){
+            acts += '<button class="lk-edit" data-act="rematch" data-oid="'+escapeHtml(o.orderId)+'">✏️ 希望を修正する</button>';
+          }
+          if(!cancelled && !mmConfirmed && !o.hasProof && o.canChange){
+            acts += '<button class="lk-cancel" data-act="cancel" data-oid="'+escapeHtml(o.orderId)+'">🗑 キャンセル</button>';
+          }
+        } else {
+          const needsPay = !cancelled && (o.pendingTopup > 0 || !o.hasProof || o.secondPayable);
+          const canEdit  = !cancelled && o.canChange && o.hasProof && o.pendingTopup === 0 && o.eventId && o.eventId === EVENT_ID;
+          if(needsPay){
+            const lbl = (o.pendingTopup > 0) ? '追加分を支払う' : (!o.hasProof ? 'お支払い証明を送る' : '2次入金（送料）を支払う');
+            acts += '<button class="lk-pay" data-act="pay" data-oid="'+escapeHtml(o.orderId)+'">'+lbl+'</button>';
+          }
+          if(!cancelled && o.canChange){
+            if(canEdit) acts += '<button class="lk-edit" data-act="edit" data-oid="'+escapeHtml(o.orderId)+'">✏️ 修正する</button>';
+            acts += '<button class="lk-cancel" data-act="cancel" data-oid="'+escapeHtml(o.orderId)+'">🗑 キャンセル</button>';
+          }
+        }
+        if(acts) html += '<div class="lk-actions">'+acts+'</div>';
+
+        if(cancelled){
+          html += '<div class="lk-cancel-box">';
+          html += '<div class="lk-cancel-reason"><b>キャンセル済み</b><br>'+escapeHtml(o.cancelReason || 'この注文はキャンセルされました。')+'</div>';
+          if(o.canReapply && o.eventId === EVENT_ID){
+            html += '<button class="lk-reapply" data-act="reapply">この回にもう一度申し込む</button>';
+          } else if(o.canReapply){
+            html += '<div class="lk-closed">もう一度申し込む場合は、この回のフォームからお願いします。</div>';
+          }
+          html += '</div>';
+        } else if(o.matchMode){
+          // マッチングモードの補足案内
+          if(mmConfirmed && !o.hasProof && mm.payExpired){
+            html += '<div class="lk-closed">枠を確保できましたが、お支払い期限（イベント締切）を過ぎています。お支払いをご希望の場合は、お手数ですが運営までお問い合わせください。</div>';
+          } else if(mmPending && !o.canChange){
+            html += '<div class="lk-closed">受付は締め切りました。マッチングの結果をお待ちください。</div>';
+          } else if(mmWaitlist && !o.canChange){
+            html += '<div class="lk-closed">受付は締め切られているため、希望の修正はできません。</div>';
+          } else if(mmWaitlist && o.eventId !== EVENT_ID){
+            html += '<div class="lk-closed">希望の修正は、この回のフォームから行えます。</div>';
+          }
+        } else if(!o.canChange){
+          html += '<div class="lk-closed">修正・キャンセルの受付は終了しています（受付締切の1時間前まで。募集を早めに締め切った場合も受付を終了します）。</div>';
+        } else if(o.pendingTopup === 0 && !o.hasProof){
+          html += '<div class="lk-closed">お支払い（証明の提出）後に修正できます。</div>';
+        } else if(o.hasProof && o.pendingTopup === 0 && o.eventId !== EVENT_ID){
+          html += '<div class="lk-closed">この注文の修正は、該当イベントのフォームから行えます（キャンセルはこのまま可能です）。</div>';
+        }
+        html += '</div>';
+      });
+    });
+    box.innerHTML = html;
+    // 照会結果の各注文IDのQRコードを生成（URL埋め込み／タップで拡大）
+    res.orders.forEach(function(o){
+      var el = document.getElementById('lkqr_' + o.orderId);
+      if(!el || !o.orderId || typeof QRCode === 'undefined') return;
+      try {
+        new QRCode(el, { text: lookupUrlFor(o.orderId), width:120, height:120, colorDark:'#000', colorLight:'#fff', correctLevel: QRCode.CorrectLevel.M });
+        el.style.cursor = 'zoom-in';
+        el.setAttribute('data-qrzoom', o.orderId);
+      } catch(e){}
+    });
+  }
+
+  // ---- 修正・キャンセル ----
+  function lookName(){ return { ln: val('f_lookLast'), fn: val('f_lookFirst') }; }
+
+  document.getElementById('lookupResult').addEventListener('click', function(e){
+    const qz = e.target.closest('[data-qrzoom]');
+    if(qz){
+      const img = qz.querySelector('img');
+      const cv  = qz.querySelector('canvas');
+      let src = '';
+      if(img && img.src) src = img.src;
+      else if(cv){ try { src = cv.toDataURL('image/png'); } catch(_){} }
+      if(src) openLightbox(src);
+      return;
+    }
+    const b = e.target.closest('button[data-act]');
+    if(!b) return;
+    if(b.dataset.act === 'edit') startEdit(b.dataset.oid);
+    else if(b.dataset.act === 'cancel') startCancel(b.dataset.oid);
+    else if(b.dataset.act === 'pay') startPay(b.dataset.oid);
+    else if(b.dataset.act === 'paymatch') startPay(b.dataset.oid);
+    else if(b.dataset.act === 'rematch') startRematch(b.dataset.oid);
+    else if(b.dataset.act === 'livestatus') loadLiveMatchStatusInto(b.dataset.eventid, 'livestatus-'+b.dataset.oid, b);
+    else if(b.dataset.act === 'reapply') goHome();
+  });
+
+  function lockLookupBtns(lock){ document.querySelectorAll('#lookupResult button').forEach(function(x){ x.disabled = lock; }); }
+
+  // ===== 修正 =====
+  function startEdit(oid){
+    const n = lookName(); lockLookupBtns(true);
+    callApi('getEditContext', { orderId: oid, lastName: n.ln, firstName: n.fn })
+      .then(function(res){
+        lockLookupBtns(false);
+        if(!res || !res.ok){ showErr('err7', (res && res.error) || '修正できません。'); return; }
+        enterEditMode(oid, n.ln, n.fn, res);
+      })
+      .catch(function(err){ lockLookupBtns(false); showErr('err7','エラー：'+err.message); });
+  }
+
+  // 補欠・一部確保の人が、希望メンバーの組み合わせを見直して再申込する
+  function startRematch(oid){
+    const n = lookName(); lockLookupBtns(true);
+    callApi('getEditContext', { orderId: oid, lastName: n.ln, firstName: n.fn })
+      .then(function(res){
+        lockLookupBtns(false);
+        if(!res || !res.ok){ showErr('err7', (res && res.error) || '修正できません。'); return; }
+        enterRematchMode(oid, n.ln, n.fn, res);
+      })
+      .catch(function(err){ lockLookupBtns(false); showErr('err7','エラー：'+err.message); });
+  }
+
+  function enterRematchMode(oid, ln, fn, ctx){
+    state.edit = { orderId: oid, ln: ln, fn: fn, floor: ctx.floorJpy, prevTotal: ctx.prevTotal, customer: ctx.customer, rematch: true };
+    // 現在応募している全商品ぶんの状態を復元：確定済みは編集不可(matchLocked)、補欠は編集可(state.matching)
+    state.matching = {};
+    state.matchLocked = {};
+    state.matchConfirmedInfo = {};   // 一部確保済み(partial)の商品の「確保済みメンバー」情報（表示専用・編集対象外）
+    (ctx.matchingList||[]).forEach(function(m){
+      if(!m.productId) return;
+      if(m.locked){
+        state.matchLocked[m.productId] = { confirmed: m.confirmed||[] };
+        return;
+      }
+      if(m.status === 'partial' && m.confirmed && m.confirmed.length){
+        state.matchConfirmedInfo[m.productId] = { confirmed: m.confirmed.slice() };
+      }
+      const hasCombine = ((m.alts||[]).length > 0) || ((m.wild||0) > 0);
+      state.matching[m.productId] = {
+        applyType: m.applyType || 'partial',
+        prefs: (m.prefs||[]).slice(),
+        alts:  (m.alts||[]).slice(),
+        wild:  m.wild || 0,
+        setCount: Math.max(1, m.setCount||1),
+        combine: hasCombine ? 'yes' : 'none'
+      };
+    });
+    ['6','7','8'].forEach(function(i){ document.getElementById('panel'+i).classList.remove('active'); });
+    document.getElementById('returningBox').style.display = 'none';
+    document.getElementById('steps').style.display = 'none';
+    const banner = document.getElementById('editBanner');
+    banner.style.display = 'block';
+    const lockedCount = Object.keys(state.matchLocked).length;
+    banner.innerHTML = '<strong>🎯 希望の修正</strong>希望メンバー・抱き合わせ（指定・自由枠）を見直して「変更を確定する」を押してください。'
+      + (lockedCount ? '（すでに全て確定している商品は変更できません）' : '')
+      + (Object.keys(state.matchConfirmedInfo).length ? '（一部確保済みの商品は、確保済みメンバーはそのまま維持され、残りの希望だけ変更できます）' : '');
+    hideErr('err1');
+    rebuildProductList();
+    goStep(1);
+  }
+
+  function setQtyUI(id, member, qty){
+    state.qty[keyOf(id, member || null)] = qty;
+    const esc = (window.CSS && CSS.escape) ? CSS.escape : function(s){ return s; };
+    const st = document.querySelector('.stepper[data-id="'+esc(id)+'"][data-member="'+esc(member||'')+'"]');
+    if(st){
+      st.querySelector('.qty').textContent = qty;
+      const cap = st.dataset.cap ? parseInt(st.dataset.cap,10) : null;
+      st.querySelector('button[data-act=minus]').disabled = (qty === 0);
+      if(cap != null) st.querySelector('button[data-act=plus]').disabled = (qty >= cap);
+    }
+  }
+
+  function enterEditMode(oid, ln, fn, ctx){
+    state.edit = { orderId: oid, ln: ln, fn: fn, floor: ctx.floorJpy, prevTotal: ctx.prevTotal, customer: ctx.customer };
+    Object.keys(state.qty).forEach(function(k){ state.qty[k] = 0; });
+    document.querySelectorAll('.stepper').forEach(function(st){
+      st.querySelector('.qty').textContent = '0';
+      st.querySelector('button[data-act=minus]').disabled = true;
+      const cap = st.dataset.cap ? parseInt(st.dataset.cap,10) : null;
+      if(cap != null) st.querySelector('button[data-act=plus]').disabled = false;
+    });
+    (ctx.items||[]).forEach(function(it){ setQtyUI(it.id, it.member, it.qty); });
+    ['6','7','8'].forEach(function(i){ document.getElementById('panel'+i).classList.remove('active'); });
+    document.getElementById('returningBox').style.display = 'none';
+    document.getElementById('steps').style.display = 'none';
+    const banner = document.getElementById('editBanner');
+    banner.style.display = 'block';
+    banner.innerHTML = '<strong>✏️ 修正モード</strong>商品の数量を変更して「変更を確定する」を押してください。初回金額 <b>'+fmtJpy(ctx.floorJpy)+'</b> を下回る変更はできません。';
+    hideErr('err1');
+    goStep(1);
+  }
+
+  function submitEditFlow(){
+    const e = state.edit; if(!e) return;
+    const isRematch = !!e.rematch;
+    if(!isRematch){
+      if(cartItems().length === 0){ showErr('err1','商品が選択されていません。'); return; }
+      if(totalJpy() < e.floor){ showErr('err1','初回金額 '+fmtJpy(e.floor)+' を下回る変更はできません。'); return; }
+    } else {
+      if(!hasMatchingSelection()){ showErr('err1','希望メンバーまたは全セット購入を選んでください。'); return; }
+    }
+    if(state.sending) return; state.sending = true;
+    hideErr('err1');
+    const cta = document.getElementById('ctaBtn'); cta.disabled = true; cta.textContent = '変更中…';
+    const payload = { orderId: e.orderId, lastName: e.ln, firstName: e.fn,
+                      items: cartItems().map(function(it){ return { id:it.id, member:it.member, qty:it.qty }; }),
+                      matching: buildMatchingPayloadArray(), rematch: isRematch };
+    callApi('submitEdit', payload)
+      .then(function(res){
+        state.sending = false;
+        if(!res || !res.ok){ showErr('err1', (res && res.error) || '変更に失敗しました。'); cta.disabled=false; cta.textContent='変更を確定する'; return; }
+        if(res.rematch){
+          showDone({ title:'希望の修正を受け付けました', lbl:'受付番号', id:res.orderId,
+                     msg:'希望メンバーの変更を承りました。<br>次回のマッチングで反映されます。結果は「購入内容の確認」からご確認いただけます。' });
+          return;
+        }
+        if(res.needPayment){
+          state.orderId = res.orderId; state.registered = true; state.editPay = true; state.shot = null; state.payKind = '';
+          state.payDone = { title:'追加お支払いを受け付けました', msg:'追加分のお支払い証明を受け付けました。<br>確認後、順次対応いたします。' };
+          document.getElementById('payOid').textContent = res.orderId;
+          showQR(res.orderId, 'payQrCanvas', 'payQrWrap', 150);
+          document.getElementById('payInfo').textContent = res.paymentInfo || '';
+          document.getElementById('payAmount').textContent = fmtJpy(res.diff);
+          document.getElementById('payRef').textContent = '（修正による追加お支払い分）';
+          document.getElementById('paySched').style.display = 'none';
+          document.getElementById('payWarn').style.display = 'none';
+          startPayCountdown(null);
+          document.getElementById('uploadLabel').classList.remove('filled');
+          document.getElementById('uploadTxt').textContent = 'タップして画像を選ぶ';
+          document.getElementById('preview').innerHTML = '';
+          document.getElementById('editBanner').style.display = 'none';
+          const bk4 = document.querySelector('#panel4 .back'); if(bk4) bk4.style.display = 'none';
+          goStep(4);
+        } else {
+          showDone({ title:'変更を受け付けました', lbl:'受付番号', id:res.orderId,
+                     msg:'内容の変更を承りました。<br>合計：'+fmtJpy(res.newTotal)+'（追加のお支払いはありません）' });
+        }
+      })
+      .catch(function(err){ state.sending = false; showErr('err1','変更に失敗しました：'+err.message); cta.disabled=false; cta.textContent='変更を確定する'; });
+  }
+
+  // ===== キャンセル =====
+  function startCancel(oid){
+    const n = lookName(); lockLookupBtns(true);
+    callApi('getCancelContext', { orderId: oid, lastName: n.ln, firstName: n.fn })
+      .then(function(res){
+        lockLookupBtns(false);
+        if(!res || !res.ok){ showErr('err7', (res && res.error) || 'キャンセルできません。'); return; }
+        showCancelScreen(oid, n.ln, n.fn, res);
+      })
+      .catch(function(err){ lockLookupBtns(false); showErr('err7','エラー：'+err.message); });
+  }
+
+  function showCancelScreen(oid, ln, fn, ctx){
+    ['1','2','3','4','5','6','7'].forEach(function(i){ document.getElementById('panel'+i).classList.remove('active'); });
+    document.getElementById('steps').style.display = 'none';
+    document.getElementById('bar').style.display = 'none';
+    document.getElementById('panel8').classList.add('active');
+    hideErr('err8');
+    let html = '<div class="lk-meta">注文ID：<b class="lk-oid">'+escapeHtml(oid)+'</b></div>';
+    if(ctx.paid){
+      html += '<div class="cancel-fee">お支払い済み金額：'+fmtJpy(ctx.paidAmount)+'<br>'
+        + 'キャンセル手数料：'+fmtJpy(ctx.cancelFee)+'<br>送金手数料：'+fmtJpy(ctx.transferFee)+'<br>'
+        + '<span class="big">返金額：'+fmtJpy(ctx.refund)+'</span></div>';
+      html += '<p class="cancel-note">キャンセルには手数料（キャンセル手数料'+fmtJpy(ctx.cancelFee)+'＋送金手数料'+fmtJpy(ctx.transferFee)+'）がかかります。上記の返金額をご指定の返金先へお振込みします。</p>';
+      html += '<div class="field"><label>返金先（銀行口座／PayPayなど）<span class="req">必須</span></label>'
+        + '<textarea id="f_refund" placeholder="例）PayPay銀行 ○○支店 普通 1234567 ヤマダ ハナコ ／ PayPay: yamada_hanako"></textarea></div>';
+    } else {
+      html += '<p class="cancel-note">この注文はまだご入金（証明提出）がありません。このままキャンセルできます（手数料・返金はありません）。</p>';
+    }
+    html += '<button class="cta" id="cancelConfirmBtn" type="button" style="width:100%;background:#C0392B">この内容でキャンセルする</button>';
+    document.getElementById('cancelBody').innerHTML = html;
+    document.getElementById('cancelConfirmBtn').addEventListener('click', function(){ submitCancelFlow(oid, ln, fn, ctx); });
+    scrollTop();
+  }
+
+  function submitCancelFlow(oid, ln, fn, ctx){
+    const rf = (ctx.paid && document.getElementById('f_refund')) ? document.getElementById('f_refund').value.trim() : '';
+    if(ctx.paid && ctx.refund > 0 && !rf){ showErr('err8','返金先をご入力ください。'); return; }
+    if(state.sending) return; state.sending = true;
+    hideErr('err8');
+    const btn = document.getElementById('cancelConfirmBtn'); btn.disabled = true; btn.textContent = '処理中…';
+    callApi('submitCancel', { orderId: oid, lastName: ln, firstName: fn, refundDest: rf })
+      .then(function(res){
+        state.sending = false;
+        if(!res || !res.ok){ showErr('err8', (res && res.error) || 'キャンセルに失敗しました。'); btn.disabled=false; btn.textContent='この内容でキャンセルする'; return; }
+        const msg = res.paid
+          ? ('キャンセルを受け付けました。<br>返金額 '+fmtJpy(res.refund)+'（手数料 '+fmtJpy(res.fee)+'）を、ご指定の返金先へお振込みします。')
+          : 'キャンセルを受け付けました。';
+        showDone({ title:'キャンセルを受け付けました', lbl:'注文ID', id:oid, msg:msg, keep:false });
+      })
+      .catch(function(err){ state.sending = false; showErr('err8','キャンセルに失敗しました：'+err.message); btn.disabled=false; btn.textContent='この内容でキャンセルする'; });
+  }
+  document.getElementById('backCancel').addEventListener('click', function(){ goHome(); });
+
+  // ===== お支払い（未入金の全額／修正の追加分）=====
+  function startPay(oid){
+    const n = lookName(); lockLookupBtns(true);
+    state.payLn = n.ln; state.payFn = n.fn;
+    callApi('getPayContext', { orderId: oid, lastName: n.ln, firstName: n.fn })
+      .then(function(res){
+        lockLookupBtns(false);
+        if(!res || !res.ok){ showErr('err7', (res && res.error) || 'お支払い情報を取得できませんでした。'); return; }
+        enterPayMode(oid, res);
+      })
+      .catch(function(err){ lockLookupBtns(false); showErr('err7','エラー：'+err.message); });
+  }
+
+  function enterPayMode(oid, ctx){
+    state.orderId = oid; state.registered = true; state.editPay = true; state.shot = null; state.payKind = ctx.kind;
+    state.curAddress = ctx.address || '';
+    state.payDone = (ctx.kind === 'topup')
+      ? { title:'追加お支払いを受け付けました', msg:'追加分のお支払い証明を受け付けました。<br>確認後、順次対応いたします。' }
+      : (ctx.kind === 'second')
+      ? { title:'2次入金（送料）を受け付けました', msg:'2次入金（送料）のお支払い証明を受け付けました。<br>確認後、順次発送の対応をいたします。' }
+      : { title:'お支払いを受け付けました', msg:'お支払い証明を受け付けました。<br>ご入金の確認後、順次対応いたします。' };
+    document.getElementById('payOid').textContent = oid;
+    showQR(oid, 'payQrCanvas', 'payQrWrap', 150);
+    document.getElementById('payInfo').textContent = ctx.paymentInfo || '';
+    document.getElementById('payAmount').textContent = fmtJpy(ctx.amountDue);
+    document.getElementById('payRef').textContent =
+      (ctx.kind === 'topup') ? '（修正による追加お支払い分）'
+      : (ctx.kind === 'second') ? '（2次入金＝送料）'
+      : '';
+    var ps = document.getElementById('paySched');
+    if (ctx.kind === 'second') {
+      var h = '';
+      h += '<div class="ps-row"><span>国際送料（お一人分）</span><b>'+fmtJpy(ctx.intl||0)+'</b></div>';
+      h += '<div class="ps-row"><span>国内送料'+(ctx.domesticLabel?'（'+escapeHtml(ctx.domesticLabel)+'）':'')+'</span><b>'+fmtJpy(ctx.domestic||0)+'</b></div>';
+      if(ctx.surcharge>0) h += '<div class="ps-row ps-add"><span>お支払い期限超過の加算（'+ctx.dayIndex+'日目）</span><b>＋'+fmtJpy(ctx.surcharge)+'</b></div>';
+      h += '<div class="ps-row ps-total"><span>今回のお支払い額</span><b>'+fmtJpy(ctx.amountDue)+'</b></div>';
+      h += '<div class="ps-note">お支払い期限：<b>'+escapeHtml(ctx.deadline||'')+'</b> まで（ご案内日から2週間）。'
+         + '1〜7日目はご案内額、<b>8〜14日目は1日ごとに'+fmtJpy(300)+'ずつ加算</b>、15日目以降はお支払いいただけません（その場合はキャンセル扱いとなり、商品は在庫にまわします）。お早めにお願いいたします。</div>';
+      ps.innerHTML = h; ps.style.display = 'block';
+    } else {
+      ps.innerHTML = ''; ps.style.display = 'none';
+    }
+    document.getElementById('payWarn').style.display = (ctx.kind === 'full') ? 'block' : 'none';
+    startPayCountdown(ctx.kind === 'full' ? ctx.autoCancelAt : null);
+    document.getElementById('uploadLabel').classList.remove('filled');
+    document.getElementById('uploadTxt').textContent = 'タップして画像を選ぶ';
+    document.getElementById('preview').innerHTML = '';
+    document.getElementById('editBanner').style.display = 'none';
+    const bk4 = document.querySelector('#panel4 .back'); if(bk4) bk4.style.display = 'none';
+    ['1','2','3','5','6','7','8'].forEach(function(i){ document.getElementById('panel'+i).classList.remove('active'); });
+    document.getElementById('returningBox').style.display = 'none';
+    goStep(4);
+    // 下部バーは表示したまま（送信ボタンがこの中にある）、合計を今回の支払い額にする
+    document.getElementById('bar').style.display = 'block';
+    document.getElementById('barTotal').textContent = fmtJpy(ctx.amountDue);
+    document.getElementById('barBonus').style.display = 'none';
+  }
+
+  let payCountTimer = null;
+  let proofCountTimer = null;
+  function renderCountdown_(el, targetMs){
+    let s = Math.floor((targetMs - Date.now())/1000);
+    if(s <= 0){ el.className = 'pay-count over'; el.textContent = '⏱ まもなく自動キャンセルされます。お早めにお支払い証明をご提出ください。'; return false; }
+    const m = Math.floor(s/60), sec = s - m*60; const p = function(n){ return (n<10?'0':'')+n; };
+    el.className = (s <= 600 ? 'pay-count over' : 'pay-count');
+    el.textContent = '⏱ 自動キャンセルまであと ' + m + ':' + p(sec) + '　この時間内にご提出ください';
+    return true;
+  }
+  function startPayCountdown(targetMs){
+    const el = document.getElementById('payCount');
+    if(payCountTimer){ clearInterval(payCountTimer); payCountTimer = null; }
+    if(!targetMs){ el.style.display = 'none'; el.textContent = ''; return; }
+    el.style.display = 'block';
+    if(!renderCountdown_(el, targetMs)) return;
+    payCountTimer = setInterval(function(){ if(!renderCountdown_(el, targetMs)){ clearInterval(payCountTimer); payCountTimer = null; } }, 1000);
+  }
+  function startProofCountdown(targetMs){
+    const el = document.getElementById('proofCount');
+    if(!el) return;
+    if(proofCountTimer){ clearInterval(proofCountTimer); proofCountTimer = null; }
+    if(!targetMs){ el.style.display = 'none'; el.textContent = ''; return; }
+    el.style.display = 'block';
+    if(!renderCountdown_(el, targetMs)) return;
+    proofCountTimer = setInterval(function(){ if(!renderCountdown_(el, targetMs)){ clearInterval(proofCountTimer); proofCountTimer = null; } }, 1000);
+  }
+  // 受付番号＋姓名がそろったら、その注文の自動キャンセル時刻を取得してカウントダウン表示
+  function loadProofCountdown(){
+    const oid = val('f_oid').trim(), ln = val('f_proofLn').trim(), fn = val('f_proofFn').trim();
+    if(!oid || !ln || !fn){ startProofCountdown(null); return; }
+    callApi('getPayContext', { orderId: oid, lastName: ln, firstName: fn })
+      .then(function(res){
+        if(res && res.ok && res.kind === 'full' && res.autoCancelAt){ startProofCountdown(res.autoCancelAt); }
+        else { startProofCountdown(null); }
+      })
+      .catch(function(){ startProofCountdown(null); });
+  }
+
+  // 完了画面（汎用）
+  // 「最初にもどる」：リロードせずに初期画面へ戻す（GAS埋め込みでのリロード白画面を回避）
+  function goHome(){
+    if(payCountTimer){ clearInterval(payCountTimer); payCountTimer = null; }
+    if(proofCountTimer){ clearInterval(proofCountTimer); proofCountTimer = null; }
+    state.sending = false;
+    try { lockLookupBtns(false); } catch(e){}
+    ['4','5','6','7','8','9'].forEach(function(i){ document.getElementById('panel'+i).classList.remove('active'); });
+    if(STATUS === 'open'){
+      document.getElementById('gate').style.display = 'none';
+      document.querySelector('main').style.display = '';
+      const rb = document.getElementById('returningBox'); if(rb) rb.style.display = '';
+      document.getElementById('steps').style.display = '';
+      goStep(1);
+    } else {
+      showGate(STATUS);
+    }
+    scrollTop();
+  }
+
+  // ---- 住所確認（2次入金の証明送信後）----
+  function showAddressConfirm(){
+    if(payCountTimer){ clearInterval(payCountTimer); payCountTimer = null; }
+    ['1','2','3','4','5','6','7','8'].forEach(function(i){ document.getElementById('panel'+i).classList.remove('active'); });
+    document.getElementById('addrCurrent').textContent = state.curAddress || '（ご登録のお届け先）';
+    document.getElementById('addrEditBox').style.display = 'none';
+    document.getElementById('addrChoices').style.display = '';
+    hideErr('err9');
+    document.getElementById('panel9').classList.add('active');
+    document.getElementById('steps').style.display = 'none';
+    document.getElementById('bar').style.display = 'none';
+    scrollTop();
+  }
+  function addrDone(extra){
+    const d = state.payDone || { title:'受け付けました', msg:'' };
+    showDone({ title:d.title, lbl:'受付番号', id: state.orderId, msg: (extra||'') + (d.msg||'') });
+  }
+  function prefillAddr2(addr){
+    addr = String(addr || '');
+    const zm = addr.match(/(\d{3})-?(\d{4})/);
+    document.getElementById('f2_zip').value = zm ? (zm[1]+zm[2]) : '';
+    // 郵便番号を除去。建物名は最初の半角スペース以降（composeAddressがスペースで連結）
+    let s = addr.replace(/^〒?\s*\d{3}-?\d{4}\s*/,'').trim();
+    let bldg = '';
+    const sp = s.indexOf(' ');
+    if(sp >= 0){ bldg = s.slice(sp+1).trim(); s = s.slice(0, sp).trim(); }
+    // 都道府県
+    let pref = '';
+    for(var i=0;i<PREFS_CLIENT.length;i++){ if(s.indexOf(PREFS_CLIENT[i])===0){ pref = PREFS_CLIENT[i]; break; } }
+    let rest = pref ? s.slice(pref.length) : s;
+    // 市区町村（政令市の「〇〇市〇〇区」も区まで含める）
+    let city = '';
+    const m = rest.match(/^(.+?[市区町村])/);
+    if(m){
+      city = m[1];
+      if(/市$/.test(city)){
+        const m2 = rest.slice(city.length).match(/^(.+?区)/);
+        if(m2) city += m2[1];
+      }
+    }
+    const town = rest.slice(city.length);
+    document.getElementById('f2_pref').value = pref;
+    document.getElementById('f2_city').value = city;
+    document.getElementById('f2_town').value = town;
+    document.getElementById('f2_bldg').value = bldg;
+  }
+  (function initAddrConfirm(){
+    const nc = document.getElementById('addrNoChange');
+    const ch = document.getElementById('addrChange');
+    const up = document.getElementById('addrUpdateBtn');
+    const z2 = document.getElementById('f2_zip');
+    if(z2) z2.addEventListener('input', function(){ digitsOnly_('f2_zip',7); });
+    const z2b = document.getElementById('zip2Btn');
+    if(z2b) z2b.addEventListener('click', function(){ zipLookupFor({zip:'f2_zip',pref:'f2_pref',city:'f2_city',town:'f2_town',hint:'zip2Hint'}); });
+    if(nc) nc.addEventListener('click', function(){ addrDone(''); });
+    if(ch) ch.addEventListener('click', function(){
+      document.getElementById('addrChoices').style.display = 'none';
+      document.getElementById('addrEditBox').style.display = '';
+      prefillAddr2(state.curAddress);
+      scrollTop();
+    });
+    const eb = document.getElementById('addrEditBack');
+    if(eb) eb.addEventListener('click', function(){
+      document.getElementById('addrEditBox').style.display = 'none';
+      document.getElementById('addrChoices').style.display = '';
+      hideErr('err9');
+      scrollTop();
+    });
+    if(up) up.addEventListener('click', function(){
+      if(val('f2_zip').replace(/[^0-9]/g,'').length !== 7){ showErr('err9','郵便番号は7桁（ハイフンなし）でご入力ください。'); return; }
+      if(!val('f2_pref') || !val('f2_town')){ showErr('err9','都道府県・町名・番地をご入力ください。'); return; }
+      if(state.sending) return; state.sending = true;
+      hideErr('err9');
+      up.disabled = true; up.textContent = '更新中…';
+      const newAddr = composeAddressFrom({zip:'f2_zip',pref:'f2_pref',city:'f2_city',town:'f2_town',bldg:'f2_bldg'});
+      callApi('updateAddress', { orderId: state.orderId, lastName: state.payLn, firstName: state.payFn, address: newAddr })
+        .then(function(res){
+          state.sending = false; up.disabled = false; up.textContent = 'この住所に更新する';
+          if(!res || !res.ok){ showErr('err9', (res && res.error) || '住所の更新に失敗しました。'); return; }
+          state.curAddress = newAddr;
+          addrDone('お届け先を更新しました。<br>');
+        })
+        .catch(function(err){ state.sending = false; up.disabled = false; up.textContent = 'この住所に更新する'; showErr('err9','住所の更新に失敗しました：'+err.message); });
+    });
+  })();
+
+  function showDone(opts){
+    document.getElementById('doneTitle').textContent = opts.title || 'お申し込みありがとうございます';
+    document.getElementById('doneLbl').textContent = opts.lbl || '受付番号';
+    document.getElementById('doneId').textContent = opts.id || '';
+    document.getElementById('doneMsg').innerHTML = opts.msg || '';
+    document.getElementById('receiptWrap').style.display = 'none';
+    document.getElementById('twitterGroupBox').style.display = 'none';   // 他の完了画面（修正・キャンセル等）では非表示。表示は showTwitterGroupInvite() を個別に呼ぶ
+    document.getElementById('keepNote').style.display = (opts.keep === false) ? 'none' : 'block';
+    ['1','2','3','4','6','7','8','9'].forEach(function(i){ document.getElementById('panel'+i).classList.remove('active'); });
+    document.getElementById('panel5').classList.add('active');
+    if(typeof payCountTimer !== 'undefined' && payCountTimer){ clearInterval(payCountTimer); payCountTimer = null; }
+    document.getElementById('steps').style.display = 'none';
+    document.getElementById('bar').style.display = 'none';
+    showQR(opts.id || '');
+    scrollTop();
+  }
+
+  // Twitterグループへの参加リンクを目立つ形で表示する（申込完了時／1次入金完了時にだけ呼ぶ）
+  function showTwitterGroupInvite(text){
+    if(!CONFIG.twitterGroupUrl) return;   // イベント設定シートに未入力なら何も表示しない
+    document.getElementById('twitterGroupText').textContent = text;
+    document.getElementById('twitterGroupLink').href = CONFIG.twitterGroupUrl;
+    document.getElementById('twitterGroupBox').style.display = 'block';
+  }
+
+  // ---- ユーティリティ ----
+  function showErr(id,msg){ const e=document.getElementById(id); e.textContent=msg; e.classList.add('show'); scrollTop(); }
+  function hideErr(id){ document.getElementById(id).classList.remove('show'); }
+
+  // ---- 画像の拡大表示 ----
+  function openLightbox(url){ document.getElementById('lbImg').src = url; document.getElementById('lightbox').style.display = 'flex'; }
+  function closeLightbox(){ const lb = document.getElementById('lightbox'); lb.style.display = 'none'; document.getElementById('lbImg').src = ''; }
+  document.getElementById('lightbox').addEventListener('click', closeLightbox);
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeLightbox(); });
+
+  if (PROOF_SAMPLE_IMG) {
+    ['sampleImg','sampleImg2'].forEach(function(id){
+      const im = document.getElementById(id);
+      if(im){ im.src = PROOF_SAMPLE_IMG; im.style.display = 'block'; im.addEventListener('click', function(){ openLightbox(PROOF_SAMPLE_IMG); }); }
+    });
+  }
+
+  initFieldValidation();
+  if (STATUS === 'open') updateTotal();
+
+  // QRコード／URLパラメータ（?lookup=受付番号）で開かれた場合、照会画面を自動で開いて番号を入力済みにする
+  (function(){
+    if(!LOOKUP_PARAM) return;
+    try {
+      showLookupMode();
+      const f = document.getElementById('f_lookup');
+      if(f) f.value = LOOKUP_PARAM;
+      // 本人確認のため姓名は手入力が必要 → 案内を表示し、姓の欄にフォーカス
+      const note = document.getElementById('lookupAutoNote');
+      if(note) note.style.display = 'block';
+      const ln = document.getElementById('f_lookLast');
+      if(ln) ln.focus();
+    } catch(e){}
+  })();
+  }  // ← boot() ここまで
+
+  // ===== 起動処理：URLパラメータを読み、getPageConfigで設定を取得してから boot() を実行 =====
+  (function start(){
+    var qs = new URLSearchParams(window.location.search);
+    var eventId = qs.get('event') || '';
+    var isTest  = qs.get('test') === '1';
+    var lookup  = qs.get('lookup') || '';
+    var overlay = document.getElementById('bootOverlay');
+
+    callApi('getPageConfig', { eventId: eventId, test: isTest, lookup: lookup })
+      .then(function(cfg){
+        if(!cfg){ throw new Error('設定を取得できませんでした'); }
+        CONFIG = cfg;
+        // 取得したCONFIGから各定数を確定（旧: テンプレート埋め込み時に決めていた値）
+        CJ = CONFIG.curJpy || '¥';
+        CK = CONFIG.curKrw || '₩';
+        BONUS = CONFIG.bonus || { enabled:false };
+        SHOW_BONUS = !!(BONUS.enabled && BONUS.showOnForm !== false);
+        STATUS = (CONFIG.test ? 'open' : (CONFIG.status || 'open'));
+        EVENT_ID = CONFIG.eventId || '';
+        TEST = !!CONFIG.test;
+        LOOKUP_PARAM = CONFIG.lookup || '';
+        MATCH_MODE = !!CONFIG.matchMode;
+
+        // ヘッダーのタイトル等、CONFIG依存の初期表示を反映
+        try { applyConfigToDom_(); } catch(e){}
+
+        boot();   // 既存の初期化を一括実行
+        if(overlay) overlay.classList.add('is-hidden');
+      })
+      .catch(function(err){
+        if(overlay){
+          overlay.innerHTML = '<div style="text-align:center;font-family:sans-serif;color:#555;padding:24px">'
+            + '<p style="font-weight:700;margin-bottom:8px">読み込みに失敗しました</p>'
+            + '<p style="font-size:.85rem">通信環境をご確認のうえ、ページを再読み込みしてください。</p>'
+            + '</div>';
+        }
+      });
+  })();
+</script>
 </body>
 </html>
