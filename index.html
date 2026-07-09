@@ -1,29 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <!-- タブやSNS共有時に表示されるタイトル。好きに変えてください -->
-<title>○○ 共同購入</title>
 <title>YUKI🍙❄️の共同購入</title>
 <style>
 html, body { margin: 0; padding: 0; height: 100%; background: #EAEEF1; }
 iframe { display: block; border: 0; width: 100%; height: 100%; }
+
+/* 読み込み中オーバーレイ：iframeの中身（GASのフォーム）が表示され終わるまで、
+    その手前に重ねて「読み込み中」を出しておく。iframe側のonloadで自動的に消える。 */
+#loadingOverlay {
+position: fixed; inset: 0;
+display: flex; flex-direction: column; align-items: center; justify-content: center;
+gap: 16px;
+background: #EAEEF1;
+z-index: 10;
+transition: opacity .35s ease;
+}
+#loadingOverlay.is-hidden {
+opacity: 0;
+pointer-events: none;
+}
+.loading-spinner {
+width: 40px; height: 40px;
+border: 4px solid #D7DEE4;
+border-top-color: #6C5CE7;
+border-radius: 50%;
+animation: loading-spin 0.8s linear infinite;
+}
+.loading-text {
+font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+font-size: 0.9rem;
+color: #667;
+}
+@keyframes loading-spin {
+to { transform: rotate(360deg); }
+}
+
+  /* 常時表示の小さな「直接開く」リンク：Google側の仕様により、埋め込み（iframe）だと
+     ログイン状態などの影響でまれに表示できないことがある。その場合、ブラウザが
+     iframe内にエラー画面を出すだけでも「読み込み完了」の扱いになり得るため、
+     読み込み中オーバーレイの表示状態に関係なく、常にこのリンクだけは操作できるようにしておく。 */
+  #directOpenLink {
+    position: fixed;
+    right: 12px; bottom: 12px;
+    z-index: 20;
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+    font-size: 0.72rem;
+    color: #667;
+    background: rgba(255,255,255,.9);
+    border: 1px solid #D7DEE4;
+    border-radius: 8px;
+    padding: 6px 10px;
+    text-decoration: none;
+  }
 </style>
 </head>
 <body>
-<!--
-   ★ここだけ編集★
-   下の GAS_BASE_URL を、あなたのGASウェブアプリの公開URLに置き換えてください。
-     例) https://script.google.com/macros/s/XXXXXXXX/exec
-
-   ■ イベントごとのリンクの発行方法
-     このファイルのURLに ?event=イベントキー名 を付けるだけです。
-       event1: https://yukionigiri.github.io/group-purchase/
-       event2: https://yukionigiri.github.io/group-purchase/?event=event2
-       event3: https://yukionigiri.github.io/group-purchase/?event=event3
-     パラメータがない場合は GAS 側の DEFAULT_EVENT（例: event1）が使われます。
-     ?test=1 を付けると動作確認モードになります。
-       テスト用: https://yukionigiri.github.io/group-purchase/?event=event2&test=1
- -->
-<iframe
-id="gasFrame"
+@@ -64,6 +82,8 @@
 src=""
 allow="clipboard-read; clipboard-write">
+</iframe>
+  <!-- オーバーレイの状態に関係なく常に押せる、直接開くための小さなリンク -->
+  <a id="directOpenLink" href="#" target="_blank" rel="noopener">うまく表示されない場合はこちら（直接開く）</a>
+
+<script>
+var GAS_BASE_URL = 'https://script.google.com/macros/s/AKfycbwyz7sT_eujjqaa_H4GVoKiw-LYEgVuUqoE9x6-_mKEdHq72_T3qUVzV_rbeEZWKaWPig/exec';
+@@ -76,7 +96,9 @@
+setTimeout(hideOverlay, 20000);
+// このページの URL パラメータ（?event=event2 など）をそのまま GAS に転送する
+var params = window.location.search;
+    frame.src = GAS_BASE_URL + (params || '');
+    var targetUrl = GAS_BASE_URL + (params || '');
+    frame.src = targetUrl;
+    document.getElementById('directOpenLink').href = targetUrl;
+</script>
+</body>
+</html>
