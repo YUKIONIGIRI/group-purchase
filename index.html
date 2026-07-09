@@ -554,11 +554,6 @@
   <!-- STEP 5: 完了 -->
   <section class="panel" id="panel5">
     <div class="done">
-      <div id="twitterGroupBox" class="twitter-group-box" style="display:none">
-        <div class="twitter-group-head">🚨 重要：グループに参加してください 🚨</div>
-        <p class="twitter-group-text" id="twitterGroupText">今後のご案内はこちらのグループで行います。下のボタンから今すぐご参加ください。</p>
-        <a id="twitterGroupLink" class="twitter-group-btn" href="#" target="_blank" rel="noopener">📩 グループに参加する</a>
-      </div>
       <div class="check">✓</div>
       <h2 id="doneTitle">お申し込みありがとうございます</h2>
       <p id="doneLbl">受付番号</p>
@@ -577,6 +572,11 @@
         <p class="copy-note">この内容は、下のボタンでコピーするか、スクリーンショットで控えてください。</p>
         <button class="copybtn" id="copyBtn" type="button">この内容をコピー</button>
         <button class="copybtn" id="saveImgBtn" type="button">控えを画像で保存</button>
+      </div>
+      <div id="twitterGroupBox" class="twitter-group-box" style="display:none">
+        <div class="twitter-group-head">🚨 重要：グループに参加してください 🚨</div>
+        <p class="twitter-group-text" id="twitterGroupText">今後のご案内はこちらのグループで行います。下のボタンから今すぐご参加ください。</p>
+        <a id="twitterGroupLink" class="twitter-group-btn" href="#" target="_blank" rel="noopener">📩 グループに参加する</a>
       </div>
       <button class="linkbtn" type="button" id="homeBtn">最初にもどる</button>
     </div>
@@ -1580,6 +1580,18 @@
       h += '</div>';
     }
 
+    // 全メンバーセット購入は希望枠の競争が無く必ず確保できるため、マッチングの実施状況とは無関係。
+    // 「マッチング未実施」等の判定に入る前に、ここで専用の案内を出して終える。
+    if(applyType === 'full'){
+      if(o.hasProof){
+        h += '<div class="mt-status ok">✅ 全メンバーセットが確定・お支払い済みです。</div>';
+      } else {
+        h += '<div class="mt-status ok">✅ 全メンバーセットが確定しています。</div>';
+        h += '<div class="mt-reapply-note">下の「お支払いに進む」からお支払いにお進みください。</div>';
+      }
+      return h;
+    }
+
     // マッチング自体がまだ一度も実施されていない場合のみ、この案内を出す
     if(!mt){
       h += '<div class="mt-pending">マッチングはまだ実施されていません。実施され次第、結果がここに表示されます。</div>';
@@ -2170,11 +2182,14 @@
       html += '<div class="lk-event">'+escapeHtml(ev)+'</div>';
       groups[ev].forEach(function(o){
         const cancelled = (o.status === 'キャンセル');
+        // 全メンバーセット購入は希望枠の競争が無く必ず確保できるため、マッチングの実施状況とは無関係に
+        // 「確定済み」として扱う（マッチング未実施の判定に入れない）。
+        const isFullSetOrder = (o.applyType === 'full');
         // マッチングモードの注文は、マッチング結果に応じて状態を出し分ける
         const mm = (o.matchMode && o.matchConfirm) ? o.matchConfirm : null;
-        const mmConfirmed = mm && mm.done && (mm.status === 'confirmed' || mm.status === 'partial');
-        const mmWaitlist  = mm && mm.done && (mm.status === 'waitlist' || mm.status === 'none');
-        const mmPending   = o.matchMode && (!mm || !mm.done);   // マッチング未実施
+        const mmConfirmed = isFullSetOrder || (mm && mm.done && (mm.status === 'confirmed' || mm.status === 'partial'));
+        const mmWaitlist  = !isFullSetOrder && mm && mm.done && (mm.status === 'waitlist' || mm.status === 'none');
+        const mmPending   = !isFullSetOrder && o.matchMode && (!mm || !mm.done);   // マッチング未実施
         let badge;
         if(cancelled) badge = '<span class="lk-badge b-cancel">キャンセル済み</span>';
         else if(o.matchMode && mmPending) badge = '<span class="lk-badge b-topup">マッチング待ち</span>';
@@ -2200,11 +2215,15 @@
         // マッチングモードの明細・合計は buildMatchingBlock_ 側で状態に応じて表示
 
         if(cancelled){ /* 表示なし */ }
+        else if(isFullSetOrder){
+          // 全メンバーセット購入：マッチングを介さず、通常の注文と同じ合計金額(o.totalJpy)で判定する
+          if(!o.hasProof) html += '<div class="lk-due red">お支払い（未入金）：'+fmtJpy(o.totalJpy)+'</div>';
+        }
         else if(o.matchMode){
-          // マッチングモード：確保できた人だけに支払い金額を表示（未実施・補欠は出さない）
-          if(mmConfirmed && !o.hasProof && !mm.payExpired){
+          // マッチングモード（部分マッチング）：確保できた人だけに支払い金額を表示（未実施・補欠は出さない）
+          if(mmConfirmed && !o.hasProof && mm && !mm.payExpired){
             html += '<div class="lk-due red">お支払い（確保メンバー '+mm.members.length+'枚分）：'+fmtJpy(mm.amount)+'</div>';
-          } else if(mmConfirmed && !o.hasProof && mm.payExpired){
+          } else if(mmConfirmed && !o.hasProof && mm && mm.payExpired){
             html += '<div class="lk-due red">お支払い期限（イベント締切）を過ぎています。お手数ですがDMにてご連絡ください。</div>';
           }
         }
@@ -2491,7 +2510,7 @@
     document.getElementById('bar').style.display = 'none';
     document.getElementById('panel8').classList.add('active');
     hideErr('err8');
-    let html = '<div class="lk-meta">注文ID：<b class="lk-oid">'+escapeHtml(oid)+'</b></div>';
+    let html = '';
     if(ctx.paid){
       html += '<div class="cancel-fee">お支払い済み金額：'+fmtJpy(ctx.paidAmount)+'<br>'
         + 'キャンセル手数料：'+fmtJpy(ctx.cancelFee)+'<br>送金手数料：'+fmtJpy(ctx.transferFee)+'<br>'
