@@ -38,6 +38,24 @@
   @keyframes loading-spin {
     to { transform: rotate(360deg); }
   }
+
+  /* 常時表示の小さな「直接開く」リンク：Google側の仕様により、埋め込み（iframe）だと
+     ログイン状態などの影響でまれに表示できないことがある。その場合、ブラウザが
+     iframe内にエラー画面を出すだけでも「読み込み完了」の扱いになり得るため、
+     読み込み中オーバーレイの表示状態に関係なく、常にこのリンクだけは操作できるようにしておく。 */
+  #directOpenLink {
+    position: fixed;
+    right: 12px; bottom: 12px;
+    z-index: 20;
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+    font-size: 0.72rem;
+    color: #667;
+    background: rgba(255,255,255,.9);
+    border: 1px solid #D7DEE4;
+    border-radius: 8px;
+    padding: 6px 10px;
+    text-decoration: none;
+  }
 </style>
 </head>
 <body>
@@ -64,6 +82,8 @@
     src=""
     allow="clipboard-read; clipboard-write">
   </iframe>
+  <!-- オーバーレイの状態に関係なく常に押せる、直接開くための小さなリンク -->
+  <a id="directOpenLink" href="#" target="_blank" rel="noopener">うまく表示されない場合はこちら（直接開く）</a>
 
   <script>
     var GAS_BASE_URL = 'https://script.google.com/macros/s/AKfycbwyz7sT_eujjqaa_H4GVoKiw-LYEgVuUqoE9x6-_mKEdHq72_T3qUVzV_rbeEZWKaWPig/exec';
@@ -76,7 +96,9 @@
     setTimeout(hideOverlay, 20000);
     // このページの URL パラメータ（?event=event2 など）をそのまま GAS に転送する
     var params = window.location.search;
-    frame.src = GAS_BASE_URL + (params || '');
+    var targetUrl = GAS_BASE_URL + (params || '');
+    frame.src = targetUrl;
+    document.getElementById('directOpenLink').href = targetUrl;
   </script>
 </body>
 </html>
