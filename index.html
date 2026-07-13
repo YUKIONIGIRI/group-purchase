@@ -460,7 +460,7 @@
     <div class="returning" id="returningBox">
       <div class="returning-title">すでにお申し込みされた方はこちら</div>
       <button type="button" id="goProof">💳 受付番号でお支払いのスクショを送る</button>
-      <button type="button" id="goLookup">🔍 受付番号で購入内容を確認する</button>
+      <button type="button" id="goLookup">🔍 受付番号で申込履歴を確認する</button>
     </div>
 
     <!-- DMグループ案内・X移行の必須事項 -->
@@ -703,7 +703,7 @@
     <p class="gate-msg"></p>
     <div class="gate-actions" id="gateActions" style="display:none">
       <button type="button" id="gateProof" style="display:none">💳 受付番号でお支払いのスクショを送る</button>
-      <button type="button" id="gateLookup">🔍 受付番号で購入内容を確認する</button>
+      <button type="button" id="gateLookup">🔍 受付番号で申込履歴を確認する</button>
     </div>
   </div>
 </section>
@@ -2004,7 +2004,7 @@
           // 場合は、これまでどおりマッチング確定まで待つ申込完了画面を出す。
           if(MATCH_MODE && !res.allFullSet){
             showDone({ title:'お申し込みを受け付けました', lbl:'受付番号', id:res.orderId,
-              msg:'枠マッチングのお申し込みを受け付けました。<br>マッチングは<b>日に数回</b>実施し、<b>枠を確保できた方にはDMグループにてご連絡</b>いたします。<br>確保できた場合は「受付番号で購入内容を確認する」からお支払いをお願いいたします。' });
+              msg:'枠マッチングのお申し込みを受け付けました。<br>マッチングは<b>日に数回</b>実施し、<b>枠を確保できた方にはDMグループにてご連絡</b>いたします。<br>確保できた場合は「受付番号で申込履歴を確認する」からお支払いをお願いいたします。' });
             showTwitterGroupInvite('お申し込みが完了しました。マッチング結果などの今後のご案内はこちらのグループで行いますので、今すぐご参加ください。');
             return;
           }
@@ -2044,7 +2044,7 @@
   function showDuplicateNotice(msg){
     const e = document.getElementById('err3');
     e.innerHTML = escapeHtml(msg) +
-      '<button type="button" id="dupLookupBtn" class="dup-btn">🔍 受付番号で購入内容を確認する</button>';
+      '<button type="button" id="dupLookupBtn" class="dup-btn">🔍 受付番号で申込履歴を確認する</button>';
     e.classList.add('show');
     const b = document.getElementById('dupLookupBtn');
     if(b) b.addEventListener('click', showLookupMode);
@@ -2073,7 +2073,7 @@
         }
         else if(res && res.stockError){
           var lines = (res.errors||[]).map(function(e){ return '・'+e.name+'（残り'+e.remaining+'点）'; }).join('<br>');
-          showErr('err4', (res.error||'在庫切れです。')+'<br><br>'+lines+'<br><br>「最初にもどる」→「受付番号で購入内容を確認する」から数量を変更してください。');
+          showErr('err4', (res.error||'在庫切れです。')+'<br><br>'+lines+'<br><br>「最初にもどる」→「受付番号で申込履歴を確認する」から数量を変更してください。');
           cta.disabled=false; cta.textContent='支払い証明を送信';
         }
         else { showErr('err4','送信に失敗しました：'+(res && res.error ? res.error : '不明なエラー')); cta.disabled=false; cta.textContent='支払い証明を送信'; }
@@ -2161,7 +2161,7 @@
     if(el) el.addEventListener('blur', loadProofCountdown);
   });
 
-  // ---- 受付番号で購入内容を確認するモード ----
+  // ---- 受付番号で申込履歴を確認するモード ----
   function showLookupMode(){
     document.getElementById('steps').style.display = 'none';
     document.getElementById('bar').style.display = 'none';
@@ -2376,7 +2376,7 @@
       holder.innerHTML = '<div class="lsr-waiting-title" style="margin-top:14px">現在の枠の状況（参考・匿名表示）</div>';
       box.appendChild(holder);
       callApi('getLiveMatchStatus', { eventId: evId })
-        .then(function(r){ holder.innerHTML = '<div class="lsr-waiting-title" style="margin-top:14px">現在の枠の状況（参考・匿名表示）</div>' + renderLiveStatusHtml_(r, true, true); })
+        .then(function(r){ holder.innerHTML = '<div class="lsr-waiting-title" style="margin-top:14px">現在の枠の状況（参考・匿名表示）</div>' + renderLiveStatusHtml_(r, true, false); })
         .catch(function(){ holder.innerHTML = ''; });
     });
   }
