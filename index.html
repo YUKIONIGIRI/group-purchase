@@ -1045,16 +1045,18 @@
   });
 
   // ---- 「いまの枠の状況」をその場で確認する（マッチングモード専用・任意のコンテナに描画できる汎用版）----
-  function renderLiveStatusHtml_(res, showWaiting){
+  function renderLiveStatusHtml_(res, showWaiting, showCounts){
     if(!res || !res.ok){ return '<div class="err" style="display:block">'+escapeHtml((res&&res.error)||'状況を取得できませんでした。')+'</div>'; }
     var h = '';
     (res.products||[]).forEach(function(p){
       h += '<div class="lsr-product">';
       h += '<div class="lsr-title">'+escapeHtml(p.productName)+'（成立 '+p.confirmedSets+' セット／'+p.nextSetNo+'セット目を調整中）</div>';
-      p.members.forEach(function(m){
-        const ok = m.candidates > 0;
-        h += '<div class="lsr-row '+(ok?'ok':'need')+'"><span>'+escapeHtml(m.name)+'</span><span>'+(ok ? ('✅ 応募 '+m.candidates+'人') : '🔲 まだ応募なし')+'</span></div>';
-      });
+      if(showCounts){
+        p.members.forEach(function(m){
+          const ok = m.candidates > 0;
+          h += '<div class="lsr-row '+(ok?'ok':'need')+'"><span>'+escapeHtml(m.name)+'</span><span>'+(ok ? ('✅ 応募 '+m.candidates+'人') : '🔲 まだ応募なし')+'</span></div>';
+        });
+      }
       if(showWaiting && p.waitingList && p.waitingList.length){
         h += '<div class="lsr-waiting">';
         h += '<div class="lsr-waiting-title">まだ確保できていない方（匿名表示）</div>';
@@ -1077,7 +1079,7 @@
     callApi('getLiveMatchStatus', { eventId: eventId })
       .then(function(res){
         if(btn){ btn.disabled = false; btn.textContent = prevLabel; }
-        box.innerHTML = renderLiveStatusHtml_(res, false);
+        box.innerHTML = renderLiveStatusHtml_(res, true, false);
       })
       .catch(function(err){
         if(btn){ btn.disabled = false; btn.textContent = prevLabel; }
@@ -2374,7 +2376,7 @@
       holder.innerHTML = '<div class="lsr-waiting-title" style="margin-top:14px">現在の枠の状況（参考・匿名表示）</div>';
       box.appendChild(holder);
       callApi('getLiveMatchStatus', { eventId: evId })
-        .then(function(r){ holder.innerHTML = '<div class="lsr-waiting-title" style="margin-top:14px">現在の枠の状況（参考・匿名表示）</div>' + renderLiveStatusHtml_(r, true); })
+        .then(function(r){ holder.innerHTML = '<div class="lsr-waiting-title" style="margin-top:14px">現在の枠の状況（参考・匿名表示）</div>' + renderLiveStatusHtml_(r, true, true); })
         .catch(function(){ holder.innerHTML = ''; });
     });
   }
