@@ -2277,6 +2277,9 @@
           if(!cancelled && mmConfirmed && !o.hasProof && !mm.payExpired){
             acts += '<button class="lk-pay" data-act="paymatch" data-oid="'+escapeHtml(o.orderId)+'">確保メンバー分を支払う</button>';
           }
+          if(!cancelled && o.hasProof && o.matchTopup){
+            acts += '<button class="lk-pay" data-act="paymatch" data-oid="'+escapeHtml(o.orderId)+'">追加確保分（'+o.matchTopup.count+'名）を支払う：'+fmtJpy(o.matchTopup.amount)+'</button>';
+          }
           if(!cancelled && o.hasProof && o.secondPayable){
             acts += '<button class="lk-pay" data-act="pay" data-oid="'+escapeHtml(o.orderId)+'">2次入金（送料）を支払う</button>';
           }
@@ -2586,6 +2589,8 @@
     state.curAddress = ctx.address || '';
     state.payDone = (ctx.kind === 'topup')
       ? { title:'追加お支払いを受け付けました', msg:'追加分のお支払い証明を受け付けました。<br>確認後、順次対応いたします。' }
+      : (ctx.kind === 'matchTopup')
+      ? { title:'追加確保分のお支払いを受け付けました', msg:'追加で確保できたメンバー分のお支払い証明を受け付けました。<br>確認後、順次対応いたします。' }
       : (ctx.kind === 'second')
       ? { title:'2次入金（送料）を受け付けました', msg:'2次入金（送料）のお支払い証明を受け付けました。<br>確認後、順次発送の対応をいたします。' }
       : { title:'お支払いを受け付けました', msg:'お支払い証明を受け付けました。<br>ご入金の確認後、順次対応いたします。' };
@@ -2595,6 +2600,7 @@
     document.getElementById('payAmount').textContent = fmtJpy(ctx.amountDue);
     document.getElementById('payRef').textContent =
       (ctx.kind === 'topup') ? '（修正による追加お支払い分）'
+      : (ctx.kind === 'matchTopup') ? ('（マッチングで新たに確保できた '+(ctx.extraCount||0)+' 名分の追加お支払い）')
       : (ctx.kind === 'second') ? '（2次入金＝送料）'
       : '';
     var ps = document.getElementById('paySched');
