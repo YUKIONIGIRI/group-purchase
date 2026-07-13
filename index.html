@@ -193,6 +193,10 @@
   .lsr-row:last-child{border-bottom:none}
   .lsr-row.ok{color:#2E7D32}
   .lsr-row.need{color:#B26A00;font-weight:700}
+  .lsr-waiting{margin-top:10px;padding-top:8px;border-top:1px solid var(--line)}
+  .lsr-waiting-title{font-weight:700;font-size:.78rem;color:var(--muted);margin-bottom:4px}
+  .lsr-waiting-row{font-size:.8rem;padding:2px 0}
+  .lsr-waiting-note{font-size:.7rem;color:var(--muted);margin:6px 0 0}
   .lk-cancel{background:#fff;border:1.5px solid #C0392B;color:#C0392B}
   .lk-closed{font-size:.78rem;color:var(--muted);margin-top:8px}
   .lk-qr-wrap{display:flex;align-items:center;gap:12px;margin:8px 0 4px;padding:10px;background:var(--color-background-secondary,#f6f7f8);border-radius:10px}
@@ -1041,7 +1045,7 @@
   });
 
   // ---- 「いまの枠の状況」をその場で確認する（マッチングモード専用・任意のコンテナに描画できる汎用版）----
-  function renderLiveStatusHtml_(res){
+  function renderLiveStatusHtml_(res, showWaiting){
     if(!res || !res.ok){ return '<div class="err" style="display:block">'+escapeHtml((res&&res.error)||'状況を取得できませんでした。')+'</div>'; }
     var h = '';
     (res.products||[]).forEach(function(p){
@@ -1051,6 +1055,15 @@
         const ok = m.candidates > 0;
         h += '<div class="lsr-row '+(ok?'ok':'need')+'"><span>'+escapeHtml(m.name)+'</span><span>'+(ok ? ('✅ 応募 '+m.candidates+'人') : '🔲 まだ応募なし')+'</span></div>';
       });
+      if(showWaiting && p.waitingList && p.waitingList.length){
+        h += '<div class="lsr-waiting">';
+        h += '<div class="lsr-waiting-title">まだ確保できていない方（匿名表示）</div>';
+        p.waitingList.forEach(function(w){
+          h += '<div class="lsr-waiting-row"><b>'+escapeHtml(w.label)+'</b>：'+escapeHtml(w.text)+'</div>';
+        });
+        h += '<p class="lsr-waiting-note">他の方の希望状況を参考に、必要であれば「希望を修正する」から内容を見直せます。</p>';
+        h += '</div>';
+      }
       h += '</div>';
     });
     h += '<div style="font-size:.7rem;color:var(--muted);text-align:right">確認時刻：'+escapeHtml((res.updatedAt||'').replace('T',' ').slice(0,16))+'</div>';
@@ -1064,7 +1077,7 @@
     callApi('getLiveMatchStatus', { eventId: eventId })
       .then(function(res){
         if(btn){ btn.disabled = false; btn.textContent = prevLabel; }
-        box.innerHTML = renderLiveStatusHtml_(res);
+        box.innerHTML = renderLiveStatusHtml_(res, false);
       })
       .catch(function(err){
         if(btn){ btn.disabled = false; btn.textContent = prevLabel; }
@@ -2343,6 +2356,26 @@
         el.style.cursor = 'zoom-in';
         el.setAttribute('data-qrzoom', o.orderId);
       } catch(e){}
+    });
+
+    // マッチングモードで、まだ確定しきっていない注文があるイベントについては、
+    // 他の方の希望状況（匿名）もあわせて表示し、希望を修正する際の参考にしてもらう。
+    const waitingEventIds = {};
+    res.orders.forEach(function(o){
+      if(!o.matchMode || o.status === 'キャンセル' || o.applyType === 'full') return;
+      const mm = o.matchConfirm;
+      const isDoneAndConfirmed = mm && mm.done && (mm.status === 'confirmed' || mm.status === 'partial') && o.hasProof;
+      if(isDoneAndConfirmed) return;   // 確保・支払いまで完了している注文は対象外
+      if(o.eventId) waitingEventIds[o.eventId] = true;
+    });
+    Object.keys(waitingEventIds).forEach(function(evId){
+      const holder = document.createElement('div');
+      holder.className = 'lk-waiting-holder';
+      holder.innerHTML = '<div class="lsr-waiting-title" style="margin-top:14px">現在の枠の状況（参考・匿名表示）</div>';
+      box.appendChild(holder);
+      callApi('getLiveMatchStatus', { eventId: evId })
+        .then(function(r){ holder.innerHTML = '<div class="lsr-waiting-title" style="margin-top:14px">現在の枠の状況（参考・匿名表示）</div>' + renderLiveStatusHtml_(r, true); })
+        .catch(function(){ holder.innerHTML = ''; });
     });
   }
 
