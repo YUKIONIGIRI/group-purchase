@@ -247,6 +247,10 @@
   .chip-rank{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;margin-left:5px;padding:0 4px;background:#fff;color:var(--primary);border-radius:999px;font-size:.66rem;font-weight:700;vertical-align:middle}
   .match-wild{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px}
   .match-order-note{font-size:.74rem;color:var(--muted);background:var(--bg);border-radius:8px;padding:9px 11px;margin-top:12px;line-height:1.6}
+  /* 全店舗購入ボックス */
+  .allstore-card{border-color:var(--primary);background:linear-gradient(180deg,#F3FAF5,var(--surface))}
+  .allstore-box{padding:2px 0}
+  .allstore-title{font-size:.94rem;font-weight:700;color:var(--ink);margin-bottom:8px}
   .wild-stepper{display:flex;align-items:center;flex:none;gap:0}
   .wild-stepper button{width:38px;height:38px;border:1px solid var(--line);background:var(--surface);font-size:1.15rem;border-radius:9px;cursor:pointer;color:var(--ink)}
   .wild-stepper button:disabled{opacity:.4;cursor:not-allowed}
@@ -774,7 +778,7 @@
   //   例: 'https://yukionigiri.github.io/group-purchase/paypay-sample.png'
   const PROOF_SAMPLE_IMG = 'https://raw.githubusercontent.com/YUKIONIGIRI/group-purchase/main/PayPay%E6%94%AF%E6%89%95%E8%A8%BC%E6%98%8E%E3%82%B9%E3%82%AF%E3%82%B7%E3%83%A7%E4%BE%8B.jpeg';
 
-  const state = { step:1, qty:{}, shot:null, shot2:null, orderId:null, registered:false, edit:null, editPay:false, payDone:null, sending:false, matching:{}, matchLocked:{}, matchConfirmedInfo:{}, isFullSetMatch:false };
+  const state = { step:1, qty:{}, shot:null, shot2:null, orderId:null, registered:false, edit:null, editPay:false, payDone:null, sending:false, matching:{}, matchLocked:{}, matchConfirmedInfo:{}, isFullSetMatch:false, allStore:{ members:[] } };
   const SCROLLER = document.getElementById('scroll');
   function scrollTop(){ if(SCROLLER) SCROLLER.scrollTo({top:0,behavior:'smooth'}); }
 
@@ -1170,6 +1174,21 @@
   }
 
   function handleMatchClick(e){
+    // 全店舗購入ボックスのクリック（.match-boxの外側にあるので先に判定する）
+    const asBox = e.target.closest('.allstore-box');
+    if(asBox){
+      const chip = e.target.closest('.chip');
+      if(chip && !chip.disabled){
+        const mb = chip.dataset.mb;
+        if(!state.allStore) state.allStore = { members:[] };
+        const arr = state.allStore.members;
+        const i = arr.indexOf(mb);
+        if(i>=0) arr.splice(i,1); else arr.push(mb);
+        rebuildProductList();
+        return true;
+      }
+      return false;
+    }
     const box = e.target.closest('.match-box');
     if(!box) return false;
     const pid = box.dataset.pid;
@@ -1231,6 +1250,17 @@
   function matchingEstimate(){
     if(!MATCH_MODE) return null;
     var items = [];
+    // 全店舗購入：選んだメンバー × 店舗数ぶんが「最大」見込み（実際は各店舗で1人しか確保できないので競合者がいれば減る）
+    if(state.allStore && state.allStore.members && state.allStore.members.length){
+      var mps = matchMemberProducts();
+      var asCount = 0, asMaxJpy = 0;
+      mps.forEach(function(p){
+        var unit = Number(p.priceJPY)||0;
+        asCount += state.allStore.members.length;
+        asMaxJpy += state.allStore.members.length * unit;
+      });
+      items.push({ productId:'__allStore__', productName:'全店舗共通', count: asCount, maxJpy: asMaxJpy, unit:0, isFull:false, isAllStore:true, members: state.allStore.members.slice() });
+    }
     (CONFIG.products||[]).forEach(function(p){
       const est = matchingEstimateForProduct(p);
       if(est) items.push(est);
@@ -1243,6 +1273,7 @@
 
   function hasMatchingSelection(){
     if(!MATCH_MODE) return false;
+    if(state.allStore && state.allStore.members && state.allStore.members.length) return true;
     return Object.keys(state.matching).some(function(pid){
       const m = state.matching[pid];
       if(!m) return false;
@@ -1251,11 +1282,44 @@
     });
   }
 
+  // マッチング対象（メンバー付き）の商品が2つ以上あるとき＝「複数店舗」のときだけ全店舗購入は意味を持つ
+  function matchMemberProducts(){ return (CONFIG.products||[]).filter(function(p){ return p.members && p.members.length; }); }
+  function allStoreMemberList(){
+    // 全店舗共通のメンバー一覧（先頭のメンバー付き商品のメンバーを代表として使う）
+    const mps = matchMemberProducts();
+    return mps.length ? (mps[0].members || []) : [];
+  }
+  // 全店舗購入の選択UI（商品リストの先頭に表示）
+  function allStoreUiHtml(){
+    const mps = matchMemberProducts();
+    if(mps.length < 2) return '';   // 店舗が1つしかないなら全店舗購入の概念は不要
+    const sel = (state.allStore && state.allStore.members) || [];
+    let h = '<div class="allstore-box">';
+    h += '<div class="allstore-title">🏬 全店舗共通で確保したいメンバー</div>';
+    h += '<p class="match-hint">ここで選んだメンバーは、<b>'+mps.length+'店舗すべて</b>で最優先で確保します（各店舗ぶん購入します）。特定の推しを全店舗そろえたい方向けです。選ばない場合は下の店舗ごとの申込みだけでOKです。</p>';
+    h += '<div class="chip-row" data-role="allstore">';
+    allStoreMemberList().forEach(function(mb){
+      const on = sel.indexOf(mb) >= 0;
+      h += '<button type="button" class="chip'+(on?' on':'')+'" data-mb="'+escapeHtml(mb)+'">'+escapeHtml(mb)+'</button>';
+    });
+    h += '</div>';
+    if(sel.length){
+      h += '<p class="match-order-note">💡 「'+sel.map(escapeHtml).join('、')+'」を全'+mps.length+'店舗で確保します（合計 '+(sel.length*mps.length)+' 枠が最大）。同じメンバーを全店舗希望する方が複数いる場合は、通常のマッチングルール（申込枚数・申込の早さ）で決まります。</p>';
+    }
+    h += '</div>';
+    return h;
+  }
+
 
   // 送信用のマッチング情報を「選択のあるメンバー付き商品ぶん、全部まとめて」配列で組み立てる（新規登録用）
   function buildMatchingPayloadArray(){
     if(!MATCH_MODE) return [];
     var list = [];
+    // 全店舗購入：選んだメンバーを全店舗で最優先確保する申込。1エントリで表現し、
+    // サーバー側（readOrderMatchingArray_）が各店舗への申込に展開する。
+    if(state.allStore && state.allStore.members && state.allStore.members.length){
+      list.push({ applyType:'allStore', members: state.allStore.members.slice() });
+    }
     (CONFIG.products||[]).forEach(function(p){
       if(!(p.members && p.members.length)) return;
       const m = state.matching[p.id];
@@ -1276,6 +1340,16 @@
     const wrap = document.getElementById('productList');
     const savedScroll = SCROLLER ? SCROLLER.scrollTop : 0;   // 再描画でスクロール位置が飛ばないよう保持
     wrap.innerHTML = '';
+    // マッチングモードで店舗（メンバー付き商品）が複数あるとき、先頭に「全店舗購入」セクションを表示
+    if (MATCH_MODE) {
+      const asHtml = allStoreUiHtml();
+      if (asHtml) {
+        const asEl = document.createElement('div');
+        asEl.className = 'product product-col matching-card allstore-card';
+        asEl.innerHTML = asHtml;
+        wrap.appendChild(asEl);
+      }
+    }
     CONFIG.products.forEach(function(p){
       const thumb = p.image
         ? '<div class="thumb-wrap" data-full="'+escapeHtml(p.image)+'"><img class="thumb" src="'+escapeHtml(p.image)+'" alt=""><span class="zoom-badge">🔍</span></div>'
@@ -1564,6 +1638,10 @@
       badge.style.display='inline-block'; badge.textContent = est.count+'枚';
       var mh='';
       est.items.forEach(function(it){
+        if(it.isAllStore){
+          mh += '<div class="minicart-item"><span class="minicart-item-name">🏬 全店舗共通：'+escapeHtml(it.members.join('、'))+'</span></div>';
+          return;
+        }
         const m = state.matching[it.productId] || {};
         const productLabel = est.items.length > 1 ? '【'+escapeHtml(it.productName)+'】' : '';
         if(it.isFull){
