@@ -164,6 +164,20 @@
   .lk-guide ul{margin:6px 0 0;padding-left:1.1em}
   .lk-guide li{margin:4px 0;color:var(--muted)}
   .lk-event{font-weight:700;margin:18px 0 8px;padding-bottom:4px;border-bottom:2px solid var(--primary)}
+  .lk-event-details{margin:18px 0 0}
+  .lk-event-summary{font-weight:700;padding:8px 4px 8px 0;border-bottom:2px solid var(--primary);cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;user-select:none}
+  .lk-event-summary::-webkit-details-marker{display:none}
+  .lk-event-summary::after{content:'▾';font-size:.8rem;color:var(--muted);transition:transform .15s ease}
+  .lk-event-details[open] > .lk-event-summary::after{transform:rotate(180deg)}
+  .lk-event-count{font-weight:400;font-size:.78rem;color:var(--muted);margin-left:8px}
+  .lk-event-body{padding-top:10px}
+  .lk-archive-details{margin:24px 0 0;border-top:1px dashed var(--line);padding-top:6px}
+  .lk-archive-summary{font-weight:700;padding:10px 4px;cursor:pointer;list-style:none;display:flex;align-items:center;color:var(--muted);user-select:none}
+  .lk-archive-summary::-webkit-details-marker{display:none}
+  .lk-archive-summary::before{content:'📦 ';margin-right:2px}
+  .lk-archive-summary::after{content:'▾';font-size:.8rem;margin-left:auto;transition:transform .15s ease}
+  .lk-archive-details[open] > .lk-archive-summary::after{transform:rotate(180deg)}
+  .lk-archive-note{font-size:.78rem;color:var(--muted);margin:0 0 10px}
   .lk-order{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:.9rem}
   .lk-date{color:var(--muted);font-size:.8rem;margin-bottom:6px}
   .lk-meta{font-size:.82rem;color:var(--muted);padding:1px 0}
@@ -2294,8 +2308,43 @@
     const box = document.getElementById('lookupResult');
     if(!res || !res.ok){ box.innerHTML=''; showErr('err7', (res && res.error) || '確認できませんでした。'); return; }
     hideErr('err7');
-    const groups = {}, order = [];
-    res.orders.forEach(function(o){ const ev=o.eventTitle||'(イベント未設定)'; if(!groups[ev]){ groups[ev]=[]; order.push(ev); } groups[ev].push(o); });
+
+    // 受付終了（募集終了・強制終了）したイベントで、1次入金（お支払い証明の提出）にすら
+    // 至っていない（＝もう進展しない）注文は、購入履歴に出しても混乱を招くだけなので表示しない。
+    // キャンセル済みの注文は、履歴として残す意味があるのでそのまま表示する。
+    const ARCHIVE_MS = 30 * 24 * 60 * 60 * 1000;   // 発送済みから1ヶ月
+    const now = Date.now();
+    const visibleOrders = (res.orders||[]).filter(function(o){
+      if(o.status === 'キャンセル') return true;
+      if(o.hasProof) return true;
+      return !o.eventClosed;
+    });
+
+    // 発送済みから1ヶ月以上たった注文は、通常の一覧から外してページ下部のアーカイブへ回す
+    const activeOrders = [], archivedOrders = [];
+    visibleOrders.forEach(function(o){
+      const isOld = o.status !== 'キャンセル' && o.shipStage === 'shipped' && o.shippedAt
+        && (now - new Date(o.shippedAt).getTime()) > ARCHIVE_MS;
+      (isOld ? archivedOrders : activeOrders).push(o);
+    });
+
+    // イベントごとにグループ化し、そのイベント内でいちばん新しい送信日時が新しい順に並べる
+    // （現在は登録が古いイベントほどシート上で先に出てくるため、そのままだと古いイベントが上に来てしまう）。
+    function groupByEvent_(list){
+      const groups = {}, order = [];
+      list.forEach(function(o){
+        const ev = o.eventTitle || '(イベント未設定)';
+        if(!groups[ev]){ groups[ev] = []; order.push(ev); }
+        groups[ev].push(o);
+      });
+      order.sort(function(a,b){
+        const da = Math.max.apply(null, groups[a].map(function(o){ return new Date(o.rawDate||o.date||0).getTime()||0; }));
+        const db = Math.max.apply(null, groups[b].map(function(o){ return new Date(o.rawDate||o.date||0).getTime()||0; }));
+        return db - da;   // 新しい方が先
+      });
+      return { groups: groups, order: order };
+    }
+
     let html = '<div class="lk-head">ご購入履歴</div>';
     html += '<div class="lk-guide">'
       + '<b>内容の修正（変更）について</b>'
@@ -2305,142 +2354,37 @@
       + '<li>初回のお申込み金額を<b>下回る変更はできません</b>。キャンセルは「🗑 キャンセル」から（手数料が差し引かれます）。</li>'
       + '<li>別の回（イベント）の注文は、その回のフォームからご確認・修正ください。</li>'
       + '</ul></div>';
-    order.forEach(function(ev){
-      html += '<div class="lk-event">'+escapeHtml(ev)+'</div>';
-      groups[ev].forEach(function(o){
-        const cancelled = (o.status === 'キャンセル');
-        // 全メンバーセット購入は希望枠の競争が無く必ず確保できるため、マッチングの実施状況とは無関係に
-        // 「確定済み」として扱う（マッチング未実施の判定に入れない）。
-        const isFullSetOrder = (o.applyType === 'full');
-        // マッチングモードの注文は、マッチング結果に応じて状態を出し分ける
-        const mm = (o.matchMode && o.matchConfirm) ? o.matchConfirm : null;
-        const mmConfirmed = isFullSetOrder || (mm && mm.done && (mm.status === 'confirmed' || mm.status === 'partial'));
-        const mmWaitlist  = !isFullSetOrder && mm && mm.done && (mm.status === 'waitlist' || mm.status === 'none');
-        const mmPending   = !isFullSetOrder && o.matchMode && (!mm || !mm.done);   // マッチング未実施
-        let badge;
-        if(cancelled) badge = '<span class="lk-badge b-cancel">キャンセル済み</span>';
-        else if(o.matchMode && mmPending) badge = '<span class="lk-badge b-topup">マッチング待ち</span>';
-        else if(o.matchMode && mmWaitlist && !o.hasProof) badge = '<span class="lk-badge b-unpaid">補欠（枠を確保できていません）</span>';
-        else if(o.matchMode && mmConfirmed && !o.hasProof) badge = '<span class="lk-badge b-unpaid">枠確保・お支払いへ</span>';
-        else if(o.pendingTopup > 0) badge = '<span class="lk-badge b-topup">追加入金が必要</span>';
-        else if(o.hasProof) badge = '<span class="lk-badge b-paid">お支払い済み（証明提出済み）</span>';
-        else badge = '<span class="lk-badge b-unpaid">未入金</span>';
 
-        html += '<div class="lk-order">';
-        html += badge;
-        html += '<div class="lk-meta">注文ID：<b class="lk-oid">'+escapeHtml(o.orderId)+'</b></div>';
-        html += '<div class="lk-qr-wrap"><div class="lk-qr-canvas" id="lkqr_'+escapeHtml(o.orderId)+'"></div><span class="lk-qr-note">このQRを保存しておくと、次回カメラで読み取るだけでこの注文の確認ページが開きます（タップで拡大）。</span></div>';
-        html += '<div class="lk-meta">送信日時：'+escapeHtml(o.date)+'</div>';
-        html += '<div class="lk-meta">Twitter ID：'+escapeHtml(o.twitterId||'-')+'</div>';
-        if(!o.matchMode){
-          o.items.forEach(function(it){
-            const label = it.member ? escapeHtml(it.name)+' / '+escapeHtml(it.member) : escapeHtml(it.name);
-            html += '<div class="lk-item"><span>'+label+' × '+it.qty+'</span><span>'+fmtJpy(it.unitJpy)+'</span></div>';
-          });
-          html += '<div class="lk-sum">合計：'+fmtJpy(o.totalJpy)+'　／　特典数：'+o.bonusQty+'個</div>';
-        }
-        // マッチングモードの明細・合計は buildMatchingBlock_ 側で状態に応じて表示
+    if(!activeOrders.length && !archivedOrders.length){
+      html += '<div class="lk-closed">表示できるご注文が見つかりませんでした。</div>';
+    }
 
-        if(cancelled){ /* 表示なし */ }
-        else if(isFullSetOrder){
-          // 全メンバーセット購入：マッチングを介さず、通常の注文と同じ合計金額(o.totalJpy)で判定する
-          if(!o.hasProof) html += '<div class="lk-due red">お支払い（未入金）：'+fmtJpy(o.totalJpy)+'</div>';
-        }
-        else if(o.matchMode){
-          // マッチングモード（部分マッチング）：確保できた人だけに支払い金額を表示（未実施・補欠は出さない）
-          if(mmConfirmed && !o.hasProof && mm && !mm.payExpired){
-            html += '<div class="lk-due red">お支払い（確保メンバー '+mm.members.length+'枚分）：'+fmtJpy(mm.amount)+'</div>';
-          } else if(mmConfirmed && !o.hasProof && mm && mm.payExpired){
-            html += '<div class="lk-due red">お支払い期限（イベント締切）を過ぎています。お手数ですがDMにてご連絡ください。</div>';
-          }
-        }
-        else if(o.pendingTopup > 0) html += '<div class="lk-due">追加でお支払いが必要：'+fmtJpy(o.pendingTopup)+'</div>';
-        else if(!o.hasProof) html += '<div class="lk-due red">お支払い（未入金）：'+fmtJpy(o.totalJpy)+'</div>';
-        else if(o.secondPayable){
-          html += '<div class="lk-due">2次入金（送料）のお支払い：'+fmtJpy(o.secondPayDue)+'</div>';
-          html += '<div class="lk-due-detail">内訳：国際送料'+fmtJpy(o.secondPayIntl)+'＋'+escapeHtml(o.secondPayDomesticLabel||'国内送料')+fmtJpy(o.secondPayDomestic)+'</div>';
-          if(o.secondPayDeadline) html += '<div class="lk-due-detail">支払い期限：<b>'+escapeHtml(o.secondPayDeadline)+'</b> まで</div>';
-        }
-        else if(o.secondPayPending) html += '<div class="lk-stage pending2">⏳ 2次入金（送料）の金額を確定中です。確定次第このページに金額が表示されます。</div>';
-        else if(o.secondClosed) html += '<div class="lk-due red">2次入金（送料）のお支払い期間は終了しました。お手数ですがDMにてご連絡ください。</div>';
-        if(!cancelled){
-          if(o.shipStage === 'shipped'){
-            html += '<div class="lk-stage shipped">🚚 発送済み'+(o.tracking ? '　追跡番号：<b>'+escapeHtml(o.tracking)+'</b>' : '')+'</div>';
-            if(CONFIG.unboxNote) html += '<div class="unbox-note" style="margin:8px 0 0">'+escapeHtml(CONFIG.unboxNote)+'</div>';
-          } else if(o.shipStage === 'packing'){
-            html += '<div class="lk-stage packing">📦 梱包中</div>';
-          } else if(o.shipStage === 'second_paid' || o.secondPaid){
-            html += '<div class="lk-stage paid2">✅ 2次入金（送料）お支払い済み</div>';
-          }
-          html += buildTimeline_(o);
-        }
-        if(!cancelled && o.matchMode){ html += buildMatchingBlock_(o); }
-
-        let acts = '';
-        if(o.matchMode){
-          // マッチングモード：確保できた人にだけ支払いボタン（支払い期限内のみ）。補欠は希望修正（未確定・締切前のみ）
-          if(!cancelled && mmConfirmed && !o.hasProof && !mm.payExpired){
-            acts += '<button class="lk-pay" data-act="paymatch" data-oid="'+escapeHtml(o.orderId)+'">確保メンバー分を支払う</button>';
-          }
-          if(!cancelled && o.hasProof && o.matchTopup){
-            acts += '<button class="lk-pay" data-act="paymatch" data-oid="'+escapeHtml(o.orderId)+'">追加確保分（'+o.matchTopup.count+'名）を支払う：'+fmtJpy(o.matchTopup.amount)+'</button>';
-          }
-          if(!cancelled && o.hasProof && o.secondPayable){
-            acts += '<button class="lk-pay" data-act="pay" data-oid="'+escapeHtml(o.orderId)+'">2次入金（送料）を支払う</button>';
-          }
-          if(!cancelled && mm && mm.hasWaitlisted && o.canChange && o.eventId === EVENT_ID){
-            acts += '<button class="lk-edit" data-act="rematch" data-oid="'+escapeHtml(o.orderId)+'">✏️ 希望を修正する</button>';
-          }
-          if(!cancelled && !mmConfirmed && !o.hasProof && o.canChange){
-            acts += '<button class="lk-cancel" data-act="cancel" data-oid="'+escapeHtml(o.orderId)+'">🗑 キャンセル</button>';
-          }
-        } else {
-          const needsPay = !cancelled && (o.pendingTopup > 0 || !o.hasProof || o.secondPayable);
-          const canEdit  = !cancelled && o.canChange && o.hasProof && o.pendingTopup === 0 && o.eventId && o.eventId === EVENT_ID;
-          if(needsPay){
-            const lbl = (o.pendingTopup > 0) ? '追加分を支払う' : (!o.hasProof ? 'お支払い証明を送る' : '2次入金（送料）を支払う');
-            acts += '<button class="lk-pay" data-act="pay" data-oid="'+escapeHtml(o.orderId)+'">'+lbl+'</button>';
-          }
-          if(!cancelled && o.canChange){
-            if(canEdit) acts += '<button class="lk-edit" data-act="edit" data-oid="'+escapeHtml(o.orderId)+'">✏️ 修正する</button>';
-            acts += '<button class="lk-cancel" data-act="cancel" data-oid="'+escapeHtml(o.orderId)+'">🗑 キャンセル</button>';
-          }
-        }
-        if(acts) html += '<div class="lk-actions">'+acts+'</div>';
-
-        if(cancelled){
-          html += '<div class="lk-cancel-box">';
-          html += '<div class="lk-cancel-reason"><b>キャンセル済み</b><br>'+escapeHtml(o.cancelReason || 'この注文はキャンセルされました。')+'</div>';
-          if(o.canReapply && o.eventId === EVENT_ID){
-            html += '<button class="lk-reapply" data-act="reapply">この回にもう一度申し込む</button>';
-          } else if(o.canReapply){
-            html += '<div class="lk-closed">もう一度申し込む場合は、この回のフォームからお願いします。</div>';
-          }
-          html += '</div>';
-        } else if(o.matchMode){
-          // マッチングモードの補足案内
-          if(mmConfirmed && !o.hasProof && mm.payExpired){
-            html += '<div class="lk-closed">枠を確保できましたが、お支払い期限（イベント締切）を過ぎています。お支払いをご希望の場合は、お手数ですが運営までお問い合わせください。</div>';
-          } else if(mmPending && !o.canChange){
-            html += '<div class="lk-closed">受付は締め切りました。マッチングの結果をお待ちください。</div>';
-          } else if(mmWaitlist && !o.canChange){
-            html += '<div class="lk-closed">受付は締め切られているため、希望の修正はできません。</div>';
-          } else if(mmWaitlist && o.eventId !== EVENT_ID){
-            html += '<div class="lk-closed">希望の修正は、この回のフォームから行えます。</div>';
-          }
-        } else if(!o.canChange){
-          html += '<div class="lk-closed">修正・キャンセルの受付は終了しています（受付締切の1時間前まで。募集を早めに締め切った場合も受付を終了します）。</div>';
-        } else if(o.pendingTopup === 0 && !o.hasProof){
-          html += '<div class="lk-closed">お支払い（証明の提出）後に修正できます。</div>';
-        } else if(o.hasProof && o.pendingTopup === 0 && o.eventId !== EVENT_ID){
-          html += '<div class="lk-closed">この注文の修正は、該当イベントのフォームから行えます（キャンセルはこのまま可能です）。</div>';
-        }
-        html += '</div>';
-      });
+    const activeGrouped = groupByEvent_(activeOrders);
+    activeGrouped.order.forEach(function(ev, i){
+      // いちばん新しいイベントだけ最初から開いておき、他は折りたたんでおく（イベントが多いと見づらいため）
+      html += '<details class="lk-event-details"'+(i===0?' open':'')+'>';
+      html += '<summary class="lk-event-summary">'+escapeHtml(ev)+'<span class="lk-event-count">'+activeGrouped.groups[ev].length+'件</span></summary>';
+      html += '<div class="lk-event-body">';
+      activeGrouped.groups[ev].forEach(function(o){ html += renderOneOrder_(o); });
+      html += '</div></details>';
     });
+
+    if(archivedOrders.length){
+      const archivedGrouped = groupByEvent_(archivedOrders);
+      html += '<details class="lk-archive-details">';
+      html += '<summary class="lk-archive-summary">アーカイブ（発送から1ヶ月以上経過した注文）<span class="lk-event-count">'+archivedOrders.length+'件</span></summary>';
+      html += '<div class="lk-event-body">';
+      html += '<p class="lk-archive-note">発送完了から1ヶ月以上たった注文は、ここにまとめて保管されます。</p>';
+      archivedGrouped.order.forEach(function(ev){
+        html += '<div class="lk-event">'+escapeHtml(ev)+'</div>';
+        archivedGrouped.groups[ev].forEach(function(o){ html += renderOneOrder_(o); });
+      });
+      html += '</div></details>';
+    }
+
     box.innerHTML = html;
     // 照会結果の各注文IDのQRコードを生成（URL埋め込み／タップで拡大）
-    res.orders.forEach(function(o){
+    visibleOrders.forEach(function(o){
       var el = document.getElementById('lkqr_' + o.orderId);
       if(!el || !o.orderId || typeof QRCode === 'undefined') return;
       try {
@@ -2453,7 +2397,7 @@
     // マッチングモードで、まだ確定しきっていない注文があるイベントについては、
     // 他の方の希望状況（匿名）もあわせて表示し、希望を修正する際の参考にしてもらう。
     const waitingEventIds = {};
-    res.orders.forEach(function(o){
+    visibleOrders.forEach(function(o){
       if(!o.matchMode || o.status === 'キャンセル' || o.applyType === 'full') return;
       const mm = o.matchConfirm;
       const isDoneAndConfirmed = mm && mm.done && (mm.status === 'confirmed' || mm.status === 'partial') && o.hasProof;
@@ -2469,6 +2413,140 @@
         .then(function(r){ holder.innerHTML = '<div class="lsr-waiting-title" style="margin-top:14px">現在の枠の状況（参考・匿名表示）</div>' + renderLiveStatusHtml_(r, true, false); })
         .catch(function(){ holder.innerHTML = ''; });
     });
+  }
+
+  // 1件の注文カードのHTMLを組み立てる（renderLookupから、通常表示・アーカイブ表示の両方で使う）
+  function renderOneOrder_(o){
+    let html = '';
+    const cancelled = (o.status === 'キャンセル');
+    // 全メンバーセット購入は希望枠の競争が無く必ず確保できるため、マッチングの実施状況とは無関係に
+    // 「確定済み」として扱う（マッチング未実施の判定に入れない）。
+    const isFullSetOrder = (o.applyType === 'full');
+    // マッチングモードの注文は、マッチング結果に応じて状態を出し分ける
+    const mm = (o.matchMode && o.matchConfirm) ? o.matchConfirm : null;
+    const mmConfirmed = isFullSetOrder || (mm && mm.done && (mm.status === 'confirmed' || mm.status === 'partial'));
+    const mmWaitlist  = !isFullSetOrder && mm && mm.done && (mm.status === 'waitlist' || mm.status === 'none');
+    const mmPending   = !isFullSetOrder && o.matchMode && (!mm || !mm.done);   // マッチング未実施
+    let badge;
+    if(cancelled) badge = '<span class="lk-badge b-cancel">キャンセル済み</span>';
+    else if(o.matchMode && mmPending) badge = '<span class="lk-badge b-topup">マッチング待ち</span>';
+    else if(o.matchMode && mmWaitlist && !o.hasProof) badge = '<span class="lk-badge b-unpaid">補欠（枠を確保できていません）</span>';
+    else if(o.matchMode && mmConfirmed && !o.hasProof) badge = '<span class="lk-badge b-unpaid">枠確保・お支払いへ</span>';
+    else if(o.pendingTopup > 0) badge = '<span class="lk-badge b-topup">追加入金が必要</span>';
+    else if(o.hasProof) badge = '<span class="lk-badge b-paid">お支払い済み（証明提出済み）</span>';
+    else badge = '<span class="lk-badge b-unpaid">未入金</span>';
+
+    html += '<div class="lk-order">';
+    html += badge;
+    html += '<div class="lk-meta">注文ID：<b class="lk-oid">'+escapeHtml(o.orderId)+'</b></div>';
+    html += '<div class="lk-qr-wrap"><div class="lk-qr-canvas" id="lkqr_'+escapeHtml(o.orderId)+'"></div><span class="lk-qr-note">このQRを保存しておくと、次回カメラで読み取るだけでこの注文の確認ページが開きます（タップで拡大）。</span></div>';
+    html += '<div class="lk-meta">送信日時：'+escapeHtml(o.date)+'</div>';
+    html += '<div class="lk-meta">Twitter ID：'+escapeHtml(o.twitterId||'-')+'</div>';
+    if(!o.matchMode){
+      o.items.forEach(function(it){
+        const label = it.member ? escapeHtml(it.name)+' / '+escapeHtml(it.member) : escapeHtml(it.name);
+        html += '<div class="lk-item"><span>'+label+' × '+it.qty+'</span><span>'+fmtJpy(it.unitJpy)+'</span></div>';
+      });
+      html += '<div class="lk-sum">合計：'+fmtJpy(o.totalJpy)+'　／　特典数：'+o.bonusQty+'個</div>';
+    }
+    // マッチングモードの明細・合計は buildMatchingBlock_ 側で状態に応じて表示
+
+    if(cancelled){ /* 表示なし */ }
+    else if(isFullSetOrder){
+      // 全メンバーセット購入：マッチングを介さず、通常の注文と同じ合計金額(o.totalJpy)で判定する
+      if(!o.hasProof) html += '<div class="lk-due red">お支払い（未入金）：'+fmtJpy(o.totalJpy)+'</div>';
+    }
+    else if(o.matchMode){
+      // マッチングモード（部分マッチング）：確保できた人だけに支払い金額を表示（未実施・補欠は出さない）
+      if(mmConfirmed && !o.hasProof && mm && !mm.payExpired){
+        html += '<div class="lk-due red">お支払い（確保メンバー '+mm.members.length+'枚分）：'+fmtJpy(mm.amount)+'</div>';
+      } else if(mmConfirmed && !o.hasProof && mm && mm.payExpired){
+        html += '<div class="lk-due red">お支払い期限（イベント締切）を過ぎています。お手数ですがDMにてご連絡ください。</div>';
+      }
+    }
+    else if(o.pendingTopup > 0) html += '<div class="lk-due">追加でお支払いが必要：'+fmtJpy(o.pendingTopup)+'</div>';
+    else if(!o.hasProof) html += '<div class="lk-due red">お支払い（未入金）：'+fmtJpy(o.totalJpy)+'</div>';
+    else if(o.secondPayable){
+      html += '<div class="lk-due">2次入金（送料）のお支払い：'+fmtJpy(o.secondPayDue)+'</div>';
+      html += '<div class="lk-due-detail">内訳：国際送料'+fmtJpy(o.secondPayIntl)+'＋'+escapeHtml(o.secondPayDomesticLabel||'国内送料')+fmtJpy(o.secondPayDomestic)+'</div>';
+      if(o.secondPayDeadline) html += '<div class="lk-due-detail">支払い期限：<b>'+escapeHtml(o.secondPayDeadline)+'</b> まで</div>';
+    }
+    else if(o.secondPayPending) html += '<div class="lk-stage pending2">⏳ 2次入金（送料）の金額を確定中です。確定次第このページに金額が表示されます。</div>';
+    else if(o.secondClosed) html += '<div class="lk-due red">2次入金（送料）のお支払い期間は終了しました。お手数ですがDMにてご連絡ください。</div>';
+    if(!cancelled){
+      if(o.shipStage === 'shipped'){
+        html += '<div class="lk-stage shipped">🚚 発送済み'+(o.tracking ? '　追跡番号：<b>'+escapeHtml(o.tracking)+'</b>' : '')+'</div>';
+        if(CONFIG.unboxNote) html += '<div class="unbox-note" style="margin:8px 0 0">'+escapeHtml(CONFIG.unboxNote)+'</div>';
+      } else if(o.shipStage === 'packing'){
+        html += '<div class="lk-stage packing">📦 梱包中</div>';
+      } else if(o.shipStage === 'second_paid' || o.secondPaid){
+        html += '<div class="lk-stage paid2">✅ 2次入金（送料）お支払い済み</div>';
+      }
+      html += buildTimeline_(o);
+    }
+    if(!cancelled && o.matchMode){ html += buildMatchingBlock_(o); }
+
+    let acts = '';
+    if(o.matchMode){
+      // マッチングモード：確保できた人にだけ支払いボタン（支払い期限内のみ）。補欠は希望修正（未確定・締切前のみ）
+      if(!cancelled && mmConfirmed && !o.hasProof && !mm.payExpired){
+        acts += '<button class="lk-pay" data-act="paymatch" data-oid="'+escapeHtml(o.orderId)+'">確保メンバー分を支払う</button>';
+      }
+      if(!cancelled && o.hasProof && o.matchTopup){
+        acts += '<button class="lk-pay" data-act="paymatch" data-oid="'+escapeHtml(o.orderId)+'">追加確保分（'+o.matchTopup.count+'名）を支払う：'+fmtJpy(o.matchTopup.amount)+'</button>';
+      }
+      if(!cancelled && o.hasProof && o.secondPayable){
+        acts += '<button class="lk-pay" data-act="pay" data-oid="'+escapeHtml(o.orderId)+'">2次入金（送料）を支払う</button>';
+      }
+      if(!cancelled && mm && mm.hasWaitlisted && o.canChange && o.eventId === EVENT_ID){
+        acts += '<button class="lk-edit" data-act="rematch" data-oid="'+escapeHtml(o.orderId)+'">✏️ 希望を修正する</button>';
+      }
+      if(!cancelled && !mmConfirmed && !o.hasProof && o.canChange){
+        acts += '<button class="lk-cancel" data-act="cancel" data-oid="'+escapeHtml(o.orderId)+'">🗑 キャンセル</button>';
+      }
+    } else {
+      const needsPay = !cancelled && (o.pendingTopup > 0 || !o.hasProof || o.secondPayable);
+      const canEdit  = !cancelled && o.canChange && o.hasProof && o.pendingTopup === 0 && o.eventId && o.eventId === EVENT_ID;
+      if(needsPay){
+        const lbl = (o.pendingTopup > 0) ? '追加分を支払う' : (!o.hasProof ? 'お支払い証明を送る' : '2次入金（送料）を支払う');
+        acts += '<button class="lk-pay" data-act="pay" data-oid="'+escapeHtml(o.orderId)+'">'+lbl+'</button>';
+      }
+      if(!cancelled && o.canChange){
+        if(canEdit) acts += '<button class="lk-edit" data-act="edit" data-oid="'+escapeHtml(o.orderId)+'">✏️ 修正する</button>';
+        acts += '<button class="lk-cancel" data-act="cancel" data-oid="'+escapeHtml(o.orderId)+'">🗑 キャンセル</button>';
+      }
+    }
+    if(acts) html += '<div class="lk-actions">'+acts+'</div>';
+
+    if(cancelled){
+      html += '<div class="lk-cancel-box">';
+      html += '<div class="lk-cancel-reason"><b>キャンセル済み</b><br>'+escapeHtml(o.cancelReason || 'この注文はキャンセルされました。')+'</div>';
+      if(o.canReapply && o.eventId === EVENT_ID){
+        html += '<button class="lk-reapply" data-act="reapply">この回にもう一度申し込む</button>';
+      } else if(o.canReapply){
+        html += '<div class="lk-closed">もう一度申し込む場合は、この回のフォームからお願いします。</div>';
+      }
+      html += '</div>';
+    } else if(o.matchMode){
+      // マッチングモードの補足案内
+      if(mmConfirmed && !o.hasProof && mm.payExpired){
+        html += '<div class="lk-closed">枠を確保できましたが、お支払い期限（イベント締切）を過ぎています。お支払いをご希望の場合は、お手数ですが運営までお問い合わせください。</div>';
+      } else if(mmPending && !o.canChange){
+        html += '<div class="lk-closed">受付は締め切りました。マッチングの結果をお待ちください。</div>';
+      } else if(mmWaitlist && !o.canChange){
+            html += '<div class="lk-closed">受付は締め切られているため、希望の修正はできません。</div>';
+          } else if(mmWaitlist && o.eventId !== EVENT_ID){
+            html += '<div class="lk-closed">希望の修正は、この回のフォームから行えます。</div>';
+          }
+        } else if(!o.canChange){
+          html += '<div class="lk-closed">修正・キャンセルの受付は終了しています（受付締切の1時間前まで。募集を早めに締め切った場合も受付を終了します）。</div>';
+        } else if(o.pendingTopup === 0 && !o.hasProof){
+      html += '<div class="lk-closed">お支払い（証明の提出）後に修正できます。</div>';
+    } else if(o.hasProof && o.pendingTopup === 0 && o.eventId !== EVENT_ID){
+      html += '<div class="lk-closed">この注文の修正は、該当イベントのフォームから行えます（キャンセルはこのまま可能です）。</div>';
+    }
+    html += '</div>';
+    return html;
   }
 
   // ---- 修正・キャンセル ----
