@@ -1234,14 +1234,15 @@
       const sc = Math.max(1, m.setCount||1);
       return { productId:p.id, productName:p.name, count: p.members.length*sc, maxJpy: p.members.length*unit*sc, unit: unit, isFull:true, setCount: sc };
     }
-    if(m.prefs && m.prefs.length){
+    const hasPrefs = m.prefs && m.prefs.length;
+    const combineOnAlts = (m.combine === 'yes') ? (m.alts||[]).length : 0;
+    const combineOnWild = (m.combine === 'yes') ? (m.wild||0) : 0;
+    if(hasPrefs || combineOnAlts || combineOnWild){
       // 最大枚数の目安 ＝ 希望枚数 ＋（抱き合わせありなら 指定メンバー数＋自由枠の枚数）。
       // 指定メンバー・自由枠は「枠が余ればその分だけ追加で引き取れる」ものなので上限は全メンバー数。
       // 実際に何枚確保できるかはマッチング結果次第（あくまで最大の目安）。
-      const alts = (m.combine === 'yes') ? (m.alts||[]).length : 0;
-      const wild = (m.combine === 'yes') ? (m.wild||0) : 0;
-      const maxCount = Math.min(p.members.length, m.prefs.length + alts + wild);
-      return { productId:p.id, productName:p.name, count: maxCount, maxJpy: maxCount*unit, unit: unit, isFull:false, prefCount: m.prefs.length, alts: alts, wild: wild };
+      const maxCount = Math.min(p.members.length, (m.prefs||[]).length + combineOnAlts + combineOnWild);
+      return { productId:p.id, productName:p.name, count: maxCount, maxJpy: maxCount*unit, unit: unit, isFull:false, prefCount: (m.prefs||[]).length, alts: combineOnAlts, wild: combineOnWild };
     }
     return null;
   }
@@ -1278,7 +1279,11 @@
       const m = state.matching[pid];
       if(!m) return false;
       if(m.applyType === 'full') return true;
-      return (m.prefs && m.prefs.length>0);
+      if(m.prefs && m.prefs.length>0) return true;
+      // 希望メンバーが無くても、指定・自由枠だけの申込は有効とする
+      // （全店舗購入と併用し、個別の店舗に指定・自由枠だけ追加したい場合など）。
+      if(m.combine === 'yes' && ((m.alts && m.alts.length>0) || (m.wild||0) > 0)) return true;
+      return false;
     });
   }
 
@@ -1325,11 +1330,14 @@
       const m = state.matching[p.id];
       if(!m) return;
       if(m.applyType === 'full'){ list.push({ productId:p.id, applyType:'full', prefs:[], alts:[], wild:0, setCount: Math.max(1, m.setCount||1) }); return; }
-      if(m.prefs && m.prefs.length){
-        const useCombine = (m.combine === 'yes');
-        list.push({ productId:p.id, applyType:'partial', prefs:m.prefs.slice(),
-                alts: useCombine ? (m.alts||[]).slice() : [],
-                wild: useCombine ? (m.wild||0) : 0 });
+      const useCombine = (m.combine === 'yes');
+      const altsToSend = useCombine ? (m.alts||[]).slice() : [];
+      const wildToSend = useCombine ? (m.wild||0) : 0;
+      // 希望メンバーが無くても、指定・自由枠だけの申込を送れるようにする
+      // （全店舗購入と併用し、個別の店舗だけ指定・自由枠を追加したい場合など）。
+      if((m.prefs && m.prefs.length) || altsToSend.length || wildToSend > 0){
+        list.push({ productId:p.id, applyType:'partial', prefs:(m.prefs||[]).slice(),
+                alts: altsToSend, wild: wildToSend });
       }
     });
     return list;
