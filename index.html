@@ -1804,18 +1804,22 @@
     var extraReqs = o.extraMatchRequests || [];   // 2商品目以降の申込内容（複数商品に同時応募している場合）
     var multi = extraReqs.length > 0;
 
-    // 1商品目（従来からの列＝W〜AA）ぶんを描画
-    h += buildOneMatchResultBlock_(multi ? o.applyProductName : '', o.applyType, o.prefsStr, o.altsStr, o.wildStr, o.setCountStr, mt, o);
+    // 1商品目（従来からの列＝W〜AA）ぶんを描画。全店舗購入のみの申込など、W〜AA列に対応する
+    // 商品が無い（o.applyTypeが空）場合は、ここでは何も描画しない
+    // （その分もextraReqs側に商品名・確定状況つきで正しく含まれているため、ここで空欄のまま
+    //   描画すると、ラベルの無い謎のステータス表示が重複して出てしまう）。
+    if(o.applyType){
+      h += buildOneMatchResultBlock_(multi ? o.applyProductName : '', o.applyType, o.prefsStr, o.altsStr, o.wildStr, o.setCountStr, mt, o);
+    }
 
-    // 2商品目以降（AB列のJSON）ぶんを、対応する結果(mt.extra)と商品IDで突き合わせて描画
+    // 2商品目以降（AB列のJSON）ぶんを描画。確定状況はサーバー側ですでに商品ごとに正しく
+    // 突き合わせ済み（req.result）なので、それをそのまま使う
+    // （以前はmt.extraをproductIdで突き合わせていたが、スナップショット上の「1件目(mine)／
+    //   2件目以降(extra)」という分類はW〜AA列とは連動しない別軸のため、対象商品がたまたま
+    //   mine側に入っていると「結果なし」と誤判定されるバグがあった）。
     if(multi){
       extraReqs.forEach(function(req){
-        var extraResult = null;
-        if(mt && mt.extra){
-          extraResult = mt.extra.filter(function(e){ return e.productId === req.productId; })[0] || null;
-        }
-        // このAB列の商品に対応する結果が無い場合でも、マッチング自体が実施済みならその旨を伝える
-        var mtForThis = extraResult ? { updatedAt: mt.updatedAt, mine: extraResult.mine, fill: extraResult.fill } : (mt ? { updatedAt: mt.updatedAt, mine: null, fill: null } : null);
+        var mtForThis = req.result ? { updatedAt: mt ? mt.updatedAt : null, mine: req.result, fill: req.fill || null } : (mt ? { updatedAt: mt.updatedAt, mine: null, fill: null } : null);
         h += '<div class="mt-extra-sep"></div>';
         h += buildOneMatchResultBlock_(req.productName, req.applyType, req.prefsStr, req.altsStr, req.wildStr, req.setCountStr, mtForThis, o);
       });
