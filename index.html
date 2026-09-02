@@ -2516,6 +2516,9 @@
     state.matching = {};
     state.matchLocked = {};
     state.matchConfirmedInfo = {};   // 一部確保済み(partial)の商品の「確保済みメンバー」情報（表示専用・編集対象外）
+    // 全店舗購入で選んでいたメンバーも復元する（これが無いと、修正画面で「全店舗購入」欄が
+    // 空に見えてしまい、変更・解除ができなくなる）
+    state.allStore = { members: (ctx.allStoreMembers || []).slice() };
     (ctx.matchingList||[]).forEach(function(m){
       if(!m.productId) return;
       if(m.locked){
