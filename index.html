@@ -1741,11 +1741,28 @@
     var isWaitlistLike = (mine.status !== 'confirmed' && mine.status !== 'partial');
 
     // 自分の結果
+    // 確定済みメンバーのうち、「現在の希望・指定（prefsStr／altsStr）に含まれているもの」と
+    // 「含まれていないもの（＝以前の希望を変更する前に確保したもの）」を分けて表示する。
+    // これにより、「今の希望とは違うメンバーが確定している」という食い違いが、参加者・運営双方に
+    // ひと目で分かるようにする。
+    var currentWanted = (prefsStr ? prefsStr.split(',') : []).concat(altsStr ? altsStr.split(',') : []).map(function(s){ return s.trim(); }).filter(Boolean);
+    function splitConfirmed_(confirmedList){
+      var current = [], previous = [];
+      (confirmedList || []).forEach(function(m){ (currentWanted.indexOf(m) >= 0 ? current : previous).push(m); });
+      return { current: current, previous: previous };
+    }
+    function confirmedLineHtml_(confirmedList){
+      var split = splitConfirmed_(confirmedList);
+      var parts = [];
+      if(split.current.length) parts.push('今の希望・指定：<b>'+escapeHtml(split.current.join('、'))+'</b>');
+      if(split.previous.length) parts.push('以前の希望で確保済み：<b>'+escapeHtml(split.previous.join('、'))+'</b>');
+      return parts.length ? parts.join('／') : '<b>'+escapeHtml(confirmedList.join('、'))+'</b>';
+    }
     if(mine.status === 'confirmed'){
-      h += '<div class="mt-status ok">✅ 枠を確保できました：<b>'+escapeHtml(mine.confirmed.join('、'))+'</b></div>';
+      h += '<div class="mt-status ok">✅ 枠を確保できました：'+confirmedLineHtml_(mine.confirmed)+'</div>';
       h += '<div class="mt-reapply-note">下の「確保メンバー分を支払う」からお支払いにお進みください。</div>';
     } else if(mine.status === 'partial'){
-      h += '<div class="mt-status partial">☑️ 一部の枠を確保できました：<b>'+escapeHtml(mine.confirmed.join('、'))+'</b></div>';
+      h += '<div class="mt-status partial">☑️ 一部の枠を確保できました：'+confirmedLineHtml_(mine.confirmed)+'</div>';
       if(mine.missing && mine.missing.length)
         h += '<div class="mt-status miss">まだ確保できていない希望・指定：<b>'+escapeHtml(mine.missing.join('、'))+'</b>（引き続きマッチング対象です）</div>';
       if(mine.remainingWild > 0)
