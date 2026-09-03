@@ -159,6 +159,12 @@
   #qrCanvas canvas,#qrCanvas img,#payQrCanvas canvas,#payQrCanvas img{display:block;margin:0 auto}
   #receiptWrap .receipt{text-align:left}
   .lk-head{font-size:.95rem;margin:4px 0 12px}
+  .lk-summary{font-size:.8rem;color:var(--muted);margin:-6px 0 12px}
+  .lk-guide-details{margin-bottom:14px}
+  .lk-guide-summary{font-size:.82rem;font-weight:700;color:var(--muted);cursor:pointer;list-style:none;user-select:none;padding:6px 0;display:flex;align-items:center;justify-content:space-between}
+  .lk-guide-summary::-webkit-details-marker{display:none}
+  .lk-guide-summary::after{content:'▾';font-size:.75rem;transition:transform .15s ease}
+  .lk-guide-details[open] > .lk-guide-summary::after{transform:rotate(180deg)}
   .lk-guide{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:14px;font-size:.8rem;line-height:1.6}
   .lk-guide b{font-weight:700}
   .lk-guide ul{margin:6px 0 0;padding-left:1.1em}
@@ -209,6 +215,8 @@
   .lsr-row.need{color:#B26A00;font-weight:700}
   .lsr-waiting{margin-top:10px;padding-top:8px;border-top:1px solid var(--line)}
   .lsr-waiting-title{font-weight:700;font-size:.78rem;color:var(--muted);margin-bottom:4px}
+  .lk-waiting-holder{margin-top:18px;padding-top:14px;border-top:1px dashed var(--line)}
+  .lk-waiting-loading{font-size:.78rem;color:var(--muted)}
   .lsr-waiting-row{font-size:.8rem;padding:2px 0}
   .lsr-waiting-note{font-size:.7rem;color:var(--muted);margin:6px 0 0}
   .lk-cancel{background:#fff;border:1.5px solid #C0392B;color:#C0392B}
@@ -2351,12 +2359,17 @@
 
     // イベントごとにグループ化し、そのイベント内でいちばん新しい送信日時が新しい順に並べる
     // （現在は登録が古いイベントほどシート上で先に出てくるため、そのままだと古いイベントが上に来てしまう）。
+    // また、各イベント内の個々の注文も、新しい送信日時が上に来るよう並べ替える
+    // （元データがシート順＝古い順のため、そのままだと同じイベント内でも古い注文が上に来てしまう）。
     function groupByEvent_(list){
       const groups = {}, order = [];
       list.forEach(function(o){
         const ev = o.eventTitle || '(イベント未設定)';
         if(!groups[ev]){ groups[ev] = []; order.push(ev); }
         groups[ev].push(o);
+      });
+      Object.keys(groups).forEach(function(ev){
+        groups[ev].sort(function(a,b){ return (new Date(b.rawDate||b.date||0).getTime()||0) - (new Date(a.rawDate||a.date||0).getTime()||0); });
       });
       order.sort(function(a,b){
         const da = Math.max.apply(null, groups[a].map(function(o){ return new Date(o.rawDate||o.date||0).getTime()||0; }));
@@ -2367,26 +2380,51 @@
     }
 
     let html = '<div class="lk-head">ご購入履歴</div>';
+    const totalCount = activeOrders.length + archivedOrders.length;
+    const eventCount = Object.keys(activeOrders.concat(archivedOrders).reduce(function(acc,o){ acc[o.eventTitle||'']=1; return acc; }, {})).length;
+    if(totalCount) html += '<div class="lk-summary">全'+totalCount+'件のご注文（'+eventCount+'イベント）</div>';
+    html += '<details class="lk-guide-details">';
+    html += '<summary class="lk-guide-summary">内容の修正（変更）について</summary>';
     html += '<div class="lk-guide">'
-      + '<b>内容の修正（変更）について</b>'
       + '<ul>'
       + '<li>修正は、お支払い（証明の提出）後・<b>受付締切の1時間前まで</b>、各注文の「✏️ 修正する」から行えます（募集を早めに締め切った場合は、その時点で受付終了）。</li>'
       + '<li>金額が<b>増える変更</b>は、差額の<b>追加お振込みとスクショのご提出</b>が必要です。期限までにご入金・ご提出がない場合は変更は無効となり、元のお申込み内容として扱います。</li>'
       + '<li>初回のお申込み金額を<b>下回る変更はできません</b>。キャンセルは「🗑 キャンセル」から（手数料が差し引かれます）。</li>'
       + '<li>別の回（イベント）の注文は、その回のフォームからご確認・修正ください。</li>'
-      + '</ul></div>';
+      + '</ul></div></details>';
 
     if(!activeOrders.length && !archivedOrders.length){
       html += '<div class="lk-closed">表示できるご注文が見つかりませんでした。</div>';
     }
 
+    // マッチングモードで、まだ確定しきっていない注文があるイベントについては、
+    // 他の方の希望状況（匿名）もあわせて表示し、希望を修正する際の参考にしてもらう。
+    // マッチングはイベントごとに実施されるため、このセクションもページ下部にまとめてではなく、
+    // 該当するイベントの折りたたみの中に格納する。
+    const waitingEventIds = {};
+    visibleOrders.forEach(function(o){
+      if(!o.matchMode || o.status === 'キャンセル' || o.applyType === 'full') return;
+      const mm = o.matchConfirm;
+      const isDoneAndConfirmed = mm && mm.done && (mm.status === 'confirmed' || mm.status === 'partial') && o.hasProof;
+      if(isDoneAndConfirmed) return;   // 確保・支払いまで完了している注文は対象外
+      if(o.eventId) waitingEventIds[o.eventId] = true;
+    });
+
     const activeGrouped = groupByEvent_(activeOrders);
+    const waitingHolderIds = [];   // 後でAPI結果を差し込むholderのid一覧（[eventId, holderId]）
     activeGrouped.order.forEach(function(ev, i){
+      const evOrders = activeGrouped.groups[ev];
+      const eventId = evOrders[0] && evOrders[0].eventId;
       // いちばん新しいイベントだけ最初から開いておき、他は折りたたんでおく（イベントが多いと見づらいため）
       html += '<details class="lk-event-details"'+(i===0?' open':'')+'>';
-      html += '<summary class="lk-event-summary">'+escapeHtml(ev)+'<span class="lk-event-count">'+activeGrouped.groups[ev].length+'件</span></summary>';
+      html += '<summary class="lk-event-summary">'+escapeHtml(ev)+'<span class="lk-event-count">'+evOrders.length+'件</span></summary>';
       html += '<div class="lk-event-body">';
-      activeGrouped.groups[ev].forEach(function(o){ html += renderOneOrder_(o); });
+      evOrders.forEach(function(o){ html += renderOneOrder_(o); });
+      if(eventId && waitingEventIds[eventId]){
+        const holderId = 'lkwait_' + eventId;
+        html += '<div class="lk-waiting-holder" id="'+holderId+'"><div class="lsr-waiting-title">現在の枠の状況（参考・匿名表示）</div><div class="lk-waiting-loading">読み込み中…</div></div>';
+        waitingHolderIds.push([eventId, holderId]);
+      }
       html += '</div></details>';
     });
 
@@ -2415,23 +2453,13 @@
       } catch(e){}
     });
 
-    // マッチングモードで、まだ確定しきっていない注文があるイベントについては、
-    // 他の方の希望状況（匿名）もあわせて表示し、希望を修正する際の参考にしてもらう。
-    const waitingEventIds = {};
-    visibleOrders.forEach(function(o){
-      if(!o.matchMode || o.status === 'キャンセル' || o.applyType === 'full') return;
-      const mm = o.matchConfirm;
-      const isDoneAndConfirmed = mm && mm.done && (mm.status === 'confirmed' || mm.status === 'partial') && o.hasProof;
-      if(isDoneAndConfirmed) return;   // 確保・支払いまで完了している注文は対象外
-      if(o.eventId) waitingEventIds[o.eventId] = true;
-    });
-    Object.keys(waitingEventIds).forEach(function(evId){
-      const holder = document.createElement('div');
-      holder.className = 'lk-waiting-holder';
-      holder.innerHTML = '<div class="lsr-waiting-title" style="margin-top:14px">現在の枠の状況（参考・匿名表示）</div>';
-      box.appendChild(holder);
+    // 各イベントの「現在の枠の状況」を、対応するholderへ非同期に差し込む
+    waitingHolderIds.forEach(function(pair){
+      const evId = pair[0], holderId = pair[1];
+      const holder = document.getElementById(holderId);
+      if(!holder) return;
       callApi('getLiveMatchStatus', { eventId: evId })
-        .then(function(r){ holder.innerHTML = '<div class="lsr-waiting-title" style="margin-top:14px">現在の枠の状況（参考・匿名表示）</div>' + renderLiveStatusHtml_(r, true, false); })
+        .then(function(r){ holder.innerHTML = '<div class="lsr-waiting-title">現在の枠の状況（参考・匿名表示）</div>' + renderLiveStatusHtml_(r, true, false); })
         .catch(function(){ holder.innerHTML = ''; });
     });
   }
