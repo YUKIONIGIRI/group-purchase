@@ -1331,7 +1331,7 @@
 
 
   // 送信用のマッチング情報を「選択のあるメンバー付き商品ぶん、全部まとめて」配列で組み立てる（新規登録用）
-  function buildMatchingPayloadArray(){
+  function buildMatchingPayloadArray(forRematch){
     if(!MATCH_MODE) return [];
     var list = [];
     // 全店舗購入：選んだメンバーを全店舗で最優先確保する申込。1エントリで表現し、
@@ -1349,7 +1349,11 @@
       const wildToSend = useCombine ? (m.wild||0) : 0;
       // 希望メンバーが無くても、指定・自由枠だけの申込を送れるようにする
       // （全店舗購入と併用し、個別の店舗だけ指定・自由枠を追加したい場合など）。
-      if((m.prefs && m.prefs.length) || altsToSend.length || wildToSend > 0){
+      // ★希望修正（forRematch）のときは、全部空にして送信した場合も明示的に送る。
+      //   これが無いと「何も選んでいない＝この商品には触れていない」と区別がつかず、
+      //   サーバー側で元の希望がそのまま維持されてしまい、「消したのに残っている」という
+      //   状態になってしまう（希望を全部消して確定枠を手放したい場合に必要）。
+      if((m.prefs && m.prefs.length) || altsToSend.length || wildToSend > 0 || forRematch){
         list.push({ productId:p.id, applyType:'partial', prefs:(m.prefs||[]).slice(),
                 alts: altsToSend, wild: wildToSend });
       }
@@ -2705,7 +2709,7 @@
     const cta = document.getElementById('ctaBtn'); cta.disabled = true; cta.textContent = '変更中…';
     const payload = { orderId: e.orderId, lastName: e.ln, firstName: e.fn,
                       items: cartItems().map(function(it){ return { id:it.id, member:it.member, qty:it.qty }; }),
-                      matching: buildMatchingPayloadArray(), rematch: isRematch };
+                      matching: buildMatchingPayloadArray(isRematch), rematch: isRematch };
     callApi('submitEdit', payload)
       .then(function(res){
         state.sending = false;
