@@ -2541,7 +2541,7 @@
       if(!cancelled && mmConfirmed && !o.hasProof && !mm.payExpired){
         acts += '<button class="lk-pay" data-act="paymatch" data-oid="'+escapeHtml(o.orderId)+'">確保メンバー分を支払う</button>';
       }
-      if(!cancelled && o.hasProof && o.matchTopup){
+      if(!cancelled && o.hasProof && o.matchTopup && !o.matchTopup.payExpired){
         acts += '<button class="lk-pay" data-act="paymatch" data-oid="'+escapeHtml(o.orderId)+'">追加確保分（'+o.matchTopup.count+'名）を支払う：'+fmtJpy(o.matchTopup.amount)+'</button>';
       }
       if(!cancelled && o.hasProof && o.secondPayable){
@@ -2580,6 +2580,8 @@
       // マッチングモードの補足案内
       if(mmConfirmed && !o.hasProof && mm.payExpired){
         html += '<div class="lk-closed">枠を確保できましたが、お支払い期限を過ぎています。お支払いをご希望の場合は、お手数ですが運営までお問い合わせください。</div>';
+      } else if(o.hasProof && o.matchTopup && o.matchTopup.payExpired){
+        html += '<div class="lk-closed">その後さらに枠を確保できましたが、お支払い期限を過ぎているため追加分のお支払いは受け付けられません。ご希望の場合は、お手数ですが運営までお問い合わせください。</div>';
       } else if(mmPending && !o.canChange){
         html += '<div class="lk-closed">受付は締め切りました。マッチングの結果をお待ちください。</div>';
       } else if(mmWaitlist && !o.canChange){
