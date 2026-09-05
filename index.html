@@ -2510,7 +2510,7 @@
       if(mmConfirmed && !o.hasProof && mm && !mm.payExpired){
         html += '<div class="lk-due red">お支払い（確保メンバー '+mm.members.length+'枚分）：'+fmtJpy(mm.amount)+'</div>';
       } else if(mmConfirmed && !o.hasProof && mm && mm.payExpired){
-        html += '<div class="lk-due red">お支払い期限（イベント締切）を過ぎています。お手数ですがDMにてご連絡ください。</div>';
+        html += '<div class="lk-due red">お支払い期限を過ぎています。お手数ですがDMにてご連絡ください。</div>';
       }
     }
     else if(o.pendingTopup > 0) html += '<div class="lk-due">追加でお支払いが必要：'+fmtJpy(o.pendingTopup)+'</div>';
@@ -2579,7 +2579,7 @@
     } else if(o.matchMode){
       // マッチングモードの補足案内
       if(mmConfirmed && !o.hasProof && mm.payExpired){
-        html += '<div class="lk-closed">枠を確保できましたが、お支払い期限（イベント締切）を過ぎています。お支払いをご希望の場合は、お手数ですが運営までお問い合わせください。</div>';
+        html += '<div class="lk-closed">枠を確保できましたが、お支払い期限を過ぎています。お支払いをご希望の場合は、お手数ですが運営までお問い合わせください。</div>';
       } else if(mmPending && !o.canChange){
         html += '<div class="lk-closed">受付は締め切りました。マッチングの結果をお待ちください。</div>';
       } else if(mmWaitlist && !o.canChange){
