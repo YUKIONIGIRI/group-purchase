@@ -2521,7 +2521,16 @@
         const label = it.member ? escapeHtml(it.name)+' / '+escapeHtml(it.member) : escapeHtml(it.name);
         html += '<div class="lk-item"><span>'+label+' × '+it.qty+'</span><span>'+fmtJpy(it.unitJpy)+'</span></div>';
       });
-      html += '<div class="lk-sum">合計：'+fmtJpy(o.totalJpy)+'　／　特典数：'+o.bonusQty+'個</div>';
+      if(cancelled && o.refundAmount > 0){
+        // 全キャンセルは合計金額が0円になるため、代わりに返金額を分かりやすく表示する
+        html += '<div class="lk-sum">返金額：'+fmtJpy(o.refundAmount)+'</div>';
+      } else {
+        html += '<div class="lk-sum">合計：'+fmtJpy(o.totalJpy)+'　／　特典数：'+o.bonusQty+'個</div>';
+        if(!cancelled && o.refundAmount > 0){
+          // 部分キャンセル：内容変更後の合計に加え、差額の返金額も分かるようにする
+          html += '<div class="lk-due-detail">うち返金額：'+fmtJpy(o.refundAmount)+'</div>';
+        }
+      }
     }
     // マッチングモードの明細・合計は buildMatchingBlock_ 側で状態に応じて表示
 
@@ -2550,7 +2559,7 @@
       if(o.secondPayDeadline) html += '<div class="lk-due-detail">支払い期限：<b>'+escapeHtml(o.secondPayDeadline)+'</b> まで</div>';
     }
     else if(o.secondPayExcessRefund > 0 && !o.secondPaid){
-      html += '<div class="lk-due">返金額（'+fmtJpy(o.secondPayGross + o.secondPayExcessRefund)+'）が送料（'+fmtJpy(o.secondPayGross)+'）を上回っているため、2次入金（送料）のお支払いは不要です。差額（'+fmtJpy(o.secondPayExcessRefund)+'）は別途運営より返金のご案内をいたします。</div>';
+      html += '<div class="lk-due">返金額（'+fmtJpy(o.secondPayGross + o.secondPayExcessRefund)+'）が送料（'+fmtJpy(o.secondPayGross)+'）を上回っているため、2次入金（送料）のお支払いは不要です。差額（'+fmtJpy(o.secondPayExcessRefund)+'）を返金いたしますので、以下より返金に必要な情報をご入力ください。</div>';
     }
     else if(o.secondPayPending) html += '<div class="lk-stage pending2">⏳ 2次入金（送料）の金額を確定中です。確定次第このページに金額が表示されます。</div>';
     else if(o.secondClosed) html += '<div class="lk-due red">2次入金（送料）のお支払い期間は終了しました。お手数ですがDMにてご連絡ください。</div>';
