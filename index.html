@@ -337,6 +337,19 @@
   .twitter-group-btn{display:inline-block;width:100%;box-sizing:border-box;padding:14px;border-radius:10px;background:#1D9BF0;color:#fff;font-weight:800;font-size:.95rem;text-decoration:none}
   .twitter-group-btn:active{background:#1a8cd8}
   .lk-cancel-reason{background:#fbeaea;border:1px solid #f0c4c4;border-radius:9px;padding:9px 11px;font-size:.82rem;color:#a23b3b;line-height:1.6}
+  .lk-refunddest-box{background:#fff8e1;border:1px solid #ffe082;border-radius:9px;padding:10px 12px;margin-top:8px}
+  .lk-refunddest-box .ttl{font-weight:700;font-size:.82rem;color:#7c5a00;margin-bottom:4px}
+  .lk-refunddest-box .note{font-size:.78rem;color:#8a6d00;margin-bottom:8px;line-height:1.5}
+  .lk-refunddest-box input{width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #d9c27a;border-radius:7px;font-size:.86rem;margin-bottom:8px}
+  .lk-refunddest-box button{width:100%;padding:9px;background:#b7860b;color:#fff;border:0;border-radius:7px;font-size:.86rem;font-weight:700;cursor:pointer}
+  .lk-refunddest-box button:disabled{background:#ccc;cursor:not-allowed}
+  .lk-refunddest-done{font-size:.82rem;color:#2e7d32;margin-top:8px}
+  .lk-refunddest-methods{display:flex;gap:8px;margin-bottom:8px}
+  .lk-refunddest-methods button{flex:1;margin-bottom:0;background:#fff;color:#7c5a00;border:1px solid #d9c27a}
+  .lk-refunddest-methods button.active{background:#b7860b;color:#fff}
+  .lk-refunddest-fields{display:none}
+  .lk-refunddest-fields.active{display:block}
+  .lk-refunddest-box label{display:block;font-size:.74rem;color:#7c5a00;margin:0 0 3px}
   .addr-current{background:#f6f7f8;border:1px solid var(--line);border-radius:9px;padding:10px 12px;font-size:.86rem;line-height:1.7;white-space:pre-wrap}
   .testbar{background:#2b2f33;color:#fff}
   .testbar .wrap{padding:10px 16px;font-size:.8rem;line-height:1.6}
@@ -2531,7 +2544,13 @@
     else if(o.secondPayable){
       html += '<div class="lk-due">2次入金（送料）のお支払い：'+fmtJpy(o.secondPayDue)+'</div>';
       html += '<div class="lk-due-detail">内訳：国際送料'+fmtJpy(o.secondPayIntl)+'＋'+escapeHtml(o.secondPayDomesticLabel||'国内送料')+fmtJpy(o.secondPayDomestic)+'</div>';
+      if(o.secondPayRefundOffset > 0){
+        html += '<div class="lk-due-detail">送料'+fmtJpy(o.secondPayGross)+'から、返金額'+fmtJpy(o.secondPayRefundOffset)+'を差し引いた金額です。</div>';
+      }
       if(o.secondPayDeadline) html += '<div class="lk-due-detail">支払い期限：<b>'+escapeHtml(o.secondPayDeadline)+'</b> まで</div>';
+    }
+    else if(o.secondPayExcessRefund > 0 && !o.secondPaid){
+      html += '<div class="lk-due">返金額（'+fmtJpy(o.secondPayGross + o.secondPayExcessRefund)+'）が送料（'+fmtJpy(o.secondPayGross)+'）を上回っているため、2次入金（送料）のお支払いは不要です。差額（'+fmtJpy(o.secondPayExcessRefund)+'）は別途運営より返金のご案内をいたします。</div>';
     }
     else if(o.secondPayPending) html += '<div class="lk-stage pending2">⏳ 2次入金（送料）の金額を確定中です。確定次第このページに金額が表示されます。</div>';
     else if(o.secondClosed) html += '<div class="lk-due red">2次入金（送料）のお支払い期間は終了しました。お手数ですがDMにてご連絡ください。</div>';
@@ -2583,6 +2602,32 @@
     }
     if(acts) html += '<div class="lk-actions">'+acts+'</div>';
 
+    // 返金先の入力フォーム（返金額が記録されているのに未入力の場合）。
+    // キャンセル済みの注文（全キャンセル）だけでなく、部分キャンセル後もアクティブなまま残る注文
+    // （2次入金額との相殺で追加返金が発生するケース）にも表示する。
+    if(o.needsRefundDest){
+      html += '<div class="lk-refunddest-box" data-refunddest-box data-oid="'+escapeHtml(o.orderId)+'">'
+        + '<div class="ttl">💴 返金先のご入力をお願いします</div>'
+        + '<div class="note">この注文は返金対象（'+fmtJpy(o.refundAmount)+'）ですが、返金先が未登録です。お受け取り方法を選び、必要事項をご入力ください。</div>'
+        + '<div class="lk-refunddest-methods">'
+        + '<button type="button" data-method-btn="paypay" class="active">PayPay</button>'
+        + '<button type="button" data-method-btn="bank">銀行振込</button>'
+        + '</div>'
+        + '<div class="lk-refunddest-fields active" data-method-fields="paypay">'
+        + '<label>PayPay ID</label><input type="text" data-f="paypayId" placeholder="例：yamada_hanako">'
+        + '</div>'
+        + '<div class="lk-refunddest-fields" data-method-fields="bank">'
+        + '<label>銀行名</label><input type="text" data-f="bankName" placeholder="例：ゆうちょ銀行">'
+        + '<label>支店名</label><input type="text" data-f="branchName" placeholder="例：〇一八支店">'
+        + '<label>口座番号（普通）</label><input type="text" data-f="accountNumber" placeholder="例：1234567">'
+        + '<label>名義</label><input type="text" data-f="accountHolder" placeholder="例：ヤマダ ハナコ">'
+        + '</div>'
+        + '<button data-act="refunddest" data-oid="'+escapeHtml(o.orderId)+'">この内容で送信する</button>'
+        + '</div>';
+    } else if(o.refundDest){
+      html += '<div class="lk-refunddest-done">✅ 返金先を登録済みです：'+escapeHtml(o.refundDest)+'</div>';
+    }
+
     if(cancelled){
       html += '<div class="lk-cancel-box">';
       html += '<div class="lk-cancel-reason"><b>キャンセル済み</b><br>'+escapeHtml(o.cancelReason || 'この注文はキャンセルされました。')+'</div>';
@@ -2630,6 +2675,14 @@
       if(src) openLightbox(src);
       return;
     }
+    const mb = e.target.closest('[data-method-btn]');
+    if(mb){
+      const box = mb.closest('[data-refunddest-box]');
+      const method = mb.dataset.methodBtn;
+      box.querySelectorAll('[data-method-btn]').forEach(function(x){ x.classList.toggle('active', x===mb); });
+      box.querySelectorAll('[data-method-fields]').forEach(function(x){ x.classList.toggle('active', x.dataset.methodFields===method); });
+      return;
+    }
     const b = e.target.closest('button[data-act]');
     if(!b) return;
     if(b.dataset.act === 'edit') startEdit(b.dataset.oid);
@@ -2639,6 +2692,7 @@
     else if(b.dataset.act === 'rematch') startRematch(b.dataset.oid);
     else if(b.dataset.act === 'livestatus') loadLiveMatchStatusInto(b.dataset.eventid, 'livestatus-'+b.dataset.oid, b);
     else if(b.dataset.act === 'reapply') goHome();
+    else if(b.dataset.act === 'refunddest') submitRefundDestAction(b);
   });
 
   function lockLookupBtns(lock){ document.querySelectorAll('#lookupResult button').forEach(function(x){ x.disabled = lock; }); }
@@ -2791,6 +2845,42 @@
   }
 
   // ===== キャンセル =====
+  // キャンセル済み注文の「返金先を入力する」ボタン押下時の処理。
+  // ボタンと同じ .lk-refunddest-box 内の入力欄から値を取り、submitRefundDest APIへ送る。
+  function submitRefundDestAction(btn){
+    const box = btn.closest('[data-refunddest-box]');
+    const activeMethodBtn = box.querySelector('[data-method-btn].active');
+    const method = activeMethodBtn ? activeMethodBtn.dataset.methodBtn : 'paypay';
+    const getF = function(name){ const el = box.querySelector('[data-f="'+name+'"]'); return el ? el.value.trim() : ''; };
+    const payload = { orderId: btn.dataset.oid, method: method };
+    if(method === 'paypay'){
+      payload.paypayId = getF('paypayId');
+      if(!payload.paypayId){ box.querySelector('[data-f="paypayId"]').focus(); return; }
+    } else {
+      payload.bankName = getF('bankName');
+      payload.branchName = getF('branchName');
+      payload.accountNumber = getF('accountNumber');
+      payload.accountHolder = getF('accountHolder');
+      if(!payload.bankName || !payload.branchName || !payload.accountNumber || !payload.accountHolder){
+        alert('銀行名・支店名・口座番号・名義をすべてご入力ください。');
+        return;
+      }
+    }
+    const n = lookName();
+    payload.lastName = n.ln; payload.firstName = n.fn;
+    btn.disabled = true; const origText = btn.textContent; btn.textContent = '送信中…';
+    callApi('submitRefundDest', payload)
+      .then(function(res){
+        if(res && res.ok){
+          box.innerHTML = '<div class="lk-refunddest-done">✅ 返金先を送信しました。ありがとうございました。</div>';
+        } else {
+          btn.disabled = false; btn.textContent = origText;
+          alert((res && res.error) || '送信に失敗しました。もう一度お試しください。');
+        }
+      })
+      .catch(function(err){ btn.disabled = false; btn.textContent = origText; alert('エラー：'+err.message); });
+  }
+
   function startCancel(oid){
     const n = lookName(); lockLookupBtns(true);
     callApi('getCancelContext', { orderId: oid, lastName: n.ln, firstName: n.fn })
