@@ -481,6 +481,7 @@
     <div class="info-card" id="infoCard" style="display:none">
       <div class="info-row" id="infoClose" style="display:none"><span>📅 募集締切</span><b id="infoCloseVal"></b></div>
       <div class="info-row" id="infoCountdown" style="display:none"><span>⏳ 締切まで</span><b id="infoCountdownVal"></b></div>
+      <div class="info-row" id="infoMatchPayDeadline" style="display:none"><span>💰 お支払い期日</span><b id="infoMatchPayDeadlineVal"></b></div>
       <div class="info-note">参加者が多い場合、予定時刻より早めに締め切ることがあります。お早めにお申し込みください。</div>
     </div>
     <div class="returning" id="returningBox">
@@ -995,10 +996,17 @@
     });
   })();
 
-  // トップの案内（締切・カウントダウン・早期締切のお知らせ）
+  // トップの案内（締切・カウントダウン・早期締切のお知らせ・支払い期日）
   (function initInfoCard(){
     try{
-      if (!CONFIG.closeAt) return;   // 締切が設定されている回のみ表示
+      // マッチングモードで、確保したメンバー分の支払い期日が申込み締切とは別に設定されている場合、
+      // それも案内する（closeAtの有無に関わらず、設定されていれば表示する）。
+      if (CONFIG.matchMode && CONFIG.matchPayDeadline) {
+        document.getElementById('infoMatchPayDeadlineVal').textContent = CONFIG.matchPayDeadline;
+        document.getElementById('infoMatchPayDeadline').style.display = 'flex';
+        document.getElementById('infoCard').style.display = 'block';
+      }
+      if (!CONFIG.closeAt) return;   // 締切が設定されている回のみ、以下の締切・カウントダウン表示を行う
       document.getElementById('infoCloseVal').textContent = CONFIG.closeAt;
       document.getElementById('infoClose').style.display = 'flex';
       document.getElementById('infoCard').style.display = 'block';
@@ -2342,10 +2350,14 @@
     // （＝もう進展しない）注文は、購入履歴に出しても混乱を招くだけなので表示しない。
     // キャンセル済みの注文も、締切後はもう参照する意味が薄いため同様に非表示にする
     // （支払い済み＝実際にやり取りが発生した注文だけは、締切後も履歴として残す）。
+    // ★マッチングモードの注文は、このフィルタの対象外にする。マッチングで確保できたメンバー分の
+    //   お支払いは、申込み締切（closeAt）とは別に「マッチング支払い期日」を設定できる仕様のため、
+    //   イベント締切後でもまだ支払い期限内＝表示し続けるべきケースがある（実際に期限を過ぎて
+    //   いるかどうかは、個々の注文の payExpired 判定で正しく出し分けられる）。
     const ARCHIVE_MS = 30 * 24 * 60 * 60 * 1000;   // 発送済みから1ヶ月
     const now = Date.now();
     const visibleOrders = (res.orders||[]).filter(function(o){
-      if(o.hasProof) return true;
+      if(o.hasProof || o.matchMode) return true;
       return !o.eventClosed;
     });
 
@@ -2509,6 +2521,7 @@
       // マッチングモード（部分マッチング）：確保できた人だけに支払い金額を表示（未実施・補欠は出さない）
       if(mmConfirmed && !o.hasProof && mm && !mm.payExpired){
         html += '<div class="lk-due red">お支払い（確保メンバー '+mm.members.length+'枚分）：'+fmtJpy(mm.amount)+'</div>';
+        if(o.matchPayDeadline) html += '<div class="lk-due-detail">お支払い期限：<b>'+escapeHtml(o.matchPayDeadline)+'</b> まで</div>';
       } else if(mmConfirmed && !o.hasProof && mm && mm.payExpired){
         html += '<div class="lk-due red">お支払い期限を過ぎています。お手数ですがDMにてご連絡ください。</div>';
       }
@@ -2532,6 +2545,9 @@
         html += '<div class="lk-stage paid2">✅ 2次入金（送料）お支払い済み</div>';
       }
       html += buildTimeline_(o);
+    }
+    if(!cancelled && o.hasProof && o.matchTopup && !o.matchTopup.payExpired && o.matchPayDeadline){
+      html += '<div class="lk-due-detail">追加確保分のお支払い期限：<b>'+escapeHtml(o.matchPayDeadline)+'</b> まで</div>';
     }
     if(!cancelled && o.matchMode){ html += buildMatchingBlock_(o); }
 
