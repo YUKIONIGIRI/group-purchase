@@ -2567,7 +2567,7 @@
       }
       if(o.secondPayDeadline) html += '<div class="lk-due-detail">支払い期限：<b>'+escapeHtml(o.secondPayDeadline)+'</b> まで</div>';
     }
-    else if(o.secondPayExcessRefund > 0 && !o.secondPaid){
+    else if(o.secondPayExcessRefund > 0 && !o.secondPaid && !o.refundDone){
       html += '<div class="lk-due">返金額（'+fmtJpy(o.secondPayGross + o.secondPayExcessRefund)+'）が送料（'+fmtJpy(o.secondPayGross)+'）を上回っているため、2次入金（送料）のお支払いは不要です。差額（'+fmtJpy(o.secondPayExcessRefund)+'）を返金いたしますので、以下より返金に必要な情報をご入力ください。</div>';
     }
     else if(o.secondPayPending) html += '<div class="lk-stage pending2">⏳ 2次入金（送料）の金額を確定中です。確定次第このページに金額が表示されます。</div>';
@@ -2623,7 +2623,10 @@
     // 返金先の入力フォーム（返金額が記録されているのに未入力の場合）。
     // キャンセル済みの注文（全キャンセル）だけでなく、部分キャンセル後もアクティブなまま残る注文
     // （2次入金額との相殺で追加返金が発生するケース）にも表示する。
-    if(o.needsRefundDest){
+    // ★返金管理シートのO列（返金済み）に運営がチェックを入れた場合は、それを最優先で表示する。
+    if(o.refundDone){
+      html += '<div class="lk-refunddest-done">✅ 返金済みです（'+fmtJpy(o.refundAmount)+'）</div>';
+    } else if(o.needsRefundDest){
       html += '<div class="lk-refunddest-box" data-refunddest-box data-oid="'+escapeHtml(o.orderId)+'">'
         + '<div class="ttl">💴 返金先のご入力をお願いします</div>'
         + '<div class="note">この注文は返金対象（'+fmtJpy(o.refundAmount)+'）ですが、返金先が未登録です。お受け取り方法を選び、必要事項をご入力ください。</div>'
@@ -2643,7 +2646,7 @@
         + '<button data-act="refunddest" data-oid="'+escapeHtml(o.orderId)+'">この内容で送信する</button>'
         + '</div>';
     } else if(o.refundDest){
-      html += '<div class="lk-refunddest-done">✅ 返金先を登録済みです：'+escapeHtml(o.refundDest)+'</div>';
+      html += '<div class="lk-refunddest-done">✅ 返金先を登録済みです：'+escapeHtml(o.refundDest)+'（返金手続き中です）</div>';
     }
 
     if(cancelled){
