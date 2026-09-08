@@ -601,7 +601,7 @@
     </div>
     <div class="field">
       <label>お支払い証明スクリーンショット<span class="req">必須</span></label>
-      <div class="pay-warn" id="payWarn" style="display:none">⏱ お支払い証明は、ご登録から<b>1時間以内</b>にご提出ください。1時間を過ぎると、自動的にキャンセルとなります。</div>
+      <div class="pay-warn" id="payWarn" style="display:none">⏱ お支払い証明は、ご登録から<b>24時間以内</b>にご提出ください。24時間を過ぎると、自動的にキャンセルとなります。</div>
       <div class="pay-count" id="payCount" style="display:none"></div>
       <div class="proof-guide">
         <p>💡 <strong>PayPayでお支払いの場合</strong>は、見本のように<strong>送金時間・金額・PayPayマネーで支払ったこと</strong>がわかるスクリーンショットを添付してください。</p>
@@ -664,7 +664,7 @@
     <div class="pay-count" id="proofCount" style="display:none"></div>
     <div class="field">
       <label>お支払い証明スクリーンショット<span class="req">必須</span></label>
-      <div class="pay-warn">⏱ お支払い証明は、ご登録から<b>1時間以内</b>にご提出ください。1時間を過ぎると、自動的にキャンセルとなります。</div>
+      <div class="pay-warn">⏱ お支払い証明は、ご登録から<b>24時間以内</b>にご提出ください。24時間を過ぎると、自動的にキャンセルとなります。</div>
       <div class="proof-guide">
         <p>💡 <strong>PayPayでお支払いの場合</strong>は、見本のように<strong>送金時間・金額・PayPayマネーで支払ったこと</strong>がわかるスクリーンショットを添付してください。</p>
         <img class="sample" id="sampleImg2" alt="添付見本" style="display:none">
@@ -1902,14 +1902,23 @@
   }
 
   // ③ お届けスケジュールタイムライン（購入履歴）
+  // 支払済シートのN列（発送状況）のテキストをそのまま段階判定に使う。
+  // サーバー側のSHIP_STATUS_ORDERと同じ並び順（数字が大きいほど進んでいる）。
+  var SHIP_STATUS_ORDER_CLIENT = {'1次入金確認中':0,'1次入金確認済':1,'2次入金確認中':2,'梱包中':3,'発送済み':4};
   function buildTimeline_(o){
+    var st = o.shipStatusText || '';
+    var ord = (st in SHIP_STATUS_ORDER_CLIENT) ? SHIP_STATUS_ORDER_CLIENT[st] : (o.hasProof ? 0 : -1);
     var steps = [
-      { label:'申込完了',   sub:'お申し込みを受け付けました',           done: true },
-      { label:'1次入金',    sub:'商品代金のお支払い確認',               done: !!o.hasProof },
-      { label:'現地手配中',  sub:'海外で商品を手配しています',           done: !!(o.hasProof && (o.secondPaid || o.secondPayable || o.secondPayPending || o.shipStage)) },
-      { label:'2次入金',    sub:'送料のお支払い',                       done: !!(o.secondPaid || o.shipStage === 'packing' || o.shipStage === 'shipped') },
-      { label:'梱包・発送',  sub:'梱包して発送します',                   done: !!(o.shipStage === 'packing' || o.shipStage === 'shipped') },
-      { label:'お届け',     sub:'発送済み・配送中',                     done: o.shipStage === 'shipped' }
+      { label:'申込完了', sub:'お申し込みを受け付けました', done: true },
+      { label:'1次入金',
+        sub: ord>=1 ? 'お支払いを確認しました' : (o.hasProof ? 'お支払い確認中です' : '商品代金のお支払い確認'),
+        done: ord>=0 },
+      { label:'現地手配中', sub:'海外で商品を手配しています', done: ord>=1 },
+      { label:'2次入金',
+        sub: ord>=3 ? 'お支払いを確認しました' : (ord>=2 ? 'お支払い確認中です' : '送料のお支払い'),
+        done: ord>=2 },
+      { label:'梱包・発送', sub:'梱包して発送します', done: ord>=3 },
+      { label:'お届け', sub:'発送済み・配送中', done: ord>=4 }
     ];
     var activeIdx = 0;
     steps.forEach(function(s,i){ if(s.done) activeIdx = i; });
